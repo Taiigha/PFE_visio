@@ -1,1 +1,21 @@
-//CSS
+div#send {
+	position : absolute;
+	left : 70%;
+	text-align: left;
+	width : 25%;
+}
+div#receive {
+	position : absolute;
+
+	
+	text-align: left;
+	width : 65%;
+}
+
+video {
+  background: #222;
+  margin: 0 0 20px 0;
+  --width: 100%;
+  width: var(--width);
+  height: calc(var(--width) * 1);
+}
