@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="description" content="page test">
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script type="text/javascript" src="./full.js"></script>
+</head>
+<p> This is a test. </p>
+<label for="offer">Offre :</label>
+<textarea type="text" id="offer" cols="50" rows="20"></textarea>
+<button onclick="createOffer()"> Créer une offre </button>
+<button onclick="receivedOffer()"> Traiter l'offre </button>
+<label for="answer">Réponse :</label>
+<textarea type="text" id="answer" cols="50" rows="20"></textarea>
+<button onclick="receivedAnswer()"> Traiter la réponse </button>
+<body>
+</body>
+</html>
