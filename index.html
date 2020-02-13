@@ -1,19 +1,41 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="description" content="page test">
-  </head>
-  <body>
-    <form action="" method="get" class="call-form">
-      <div class="call-form">
-        <label for="url">URL: </label>
-        <input type="text" name="url" id="url" required>
-      </div>
 
-      <div class="call-form">
-        <input type="submit" value="Call">
-      </div>
-    </form>
-  </body>
+<html>
+	<head>
+
+		<meta charset="utf-8">
+		<meta name="description" content="WebRTC Visioconference">
+		<meta name="mobile-web-app-capable" content="yes">
+		
+		<title>WebRTC Visioconference</title>
+
+		<link rel="stylesheet" href="css/main.css"/>
+
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+	</head>
+
+	<body>
+		<h1>WebRTC Visioconference</h1>
+		
+		<div id="buttons">
+			<button id="callButton">Appeler</button>
+			<button id="sendButton" disabled>Raccrocher</button>
+		</div>
+		
+		<div id="send">
+			<h2>Send </h2>
+			<video>
+			</video>
+		</div>
+		
+		<div id="receive">
+			<h2>Receive</h2>
+			<video>
+			</video>
+		</div>
+		
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	 
+	</body>
 </html>
