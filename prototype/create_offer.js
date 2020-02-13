@@ -8,7 +8,7 @@ var conf = {iceServers: [
               {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //Uncomment only if necessary, usable for development purpose only
               ]
             };
-            
+
 var opt = {optional: [
             {DtlsSrtpKeyAgreement: true},
             {RtpDataChannels: true}
@@ -23,7 +23,7 @@ function gotStream(stream) {
 //Pick up medias
 var promise = navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(gotStream);
 
-function call() {
+function createRTCOffer() {
   //TODO Vérifier si plusieurs tracks.
   //TODO prendre le flux audio et le vidéo à part
   //Create a new RTC connection
@@ -41,4 +41,3 @@ function call() {
     }
   }
 }
-
