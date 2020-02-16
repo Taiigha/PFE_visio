@@ -24,7 +24,7 @@ function gotStream(stream) {
   tracks = stream.getTracks();
 }
 
-var promise = navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(gotStream);
+//navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(gotStream);
 
 peerConnection1.onicecandidate = function(e) {
   if(e.candidate == null) {
@@ -42,29 +42,60 @@ peerConnection2.onicecandidate = function(e) {
   }
 }
 
-peerConnection1.onconnection = function(e) {
-  console.log("pc1 connected")
+//DEBUG
+peerConnection1.onconnectionstatechange = function(e) {
+  console.log(peerConnection1.connectionState);
+  if(e.connectionState === "connected")
+    console.log("pc1 connected")
 }
 
-peerConnection2.onconnection = function(e) {
-  console.log("pc2 connected")
+peerConnection2.onconnectionstatechange = function(e) {
+  console.log(peerConnection2.connectionState);
+  if(e.connectionState === "connected")
+    console.log("pc2 connected")
 }
+
+peerConnection1.oniceconnectionstatechange = function(e) {
+  console.log(peerConnection1.iceConnectionState);
+  if(e.iceConnectionState === "connected")
+    console.log("pc1 connected (ice)")
+}
+
+peerConnection2.oniceconnectionstatechange = function(e) {
+  console.log(peerConnection2.iceConnectionState);
+  if(e.iceConnectionState === "connected")
+    console.log("pc2 connected (ice)")
+}
+//END DEBUG
 
 function createOffer() {
-  peerConnection1.addTrack(tracks[0]);
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
+    peerConnection1.addStream(stream);
+    peerConnection1.createOffer().then(function(offer) {
+      return peerConnection1.setLocalDescription(offer);
+    });
+  });
+  /*peerConnection1.addTrack(tracks[0]);
   peerConnection1.createOffer().then(function(offer) {
     return peerConnection1.setLocalDescription(offer);
-  });
+  });*/
 }
 
 function receivedOffer(){
   var offer = document.getElementById("offer").value;
 
-  peerConnection2.addTrack(tracks[0]);
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
+    peerConnection2.addStream(stream);
+    peerConnection2.setRemoteDescription(JSON.parse(offer));
+    peerConnection2.createAnswer().then(function(answer) {
+      peerConnection2.setLocalDescription(answer);
+    });
+  });
+  /*peerConnection2.addTrack(tracks[0]);
   peerConnection2.setRemoteDescription(JSON.parse(offer));
   peerConnection2.createAnswer().then(function(answer) {
     peerConnection2.setLocalDescription(answer);
-  });
+  });*/
 }
 
 function receivedAnswer(){
