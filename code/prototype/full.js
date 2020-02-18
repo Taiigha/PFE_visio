@@ -23,26 +23,26 @@ var dataChannel1 = null, isDataChannel1Open = false;
 var dataChannel2 = null, isDataChannel2Open = false;
 
 function gotStream(stream) {
-  console.log(stream.getTracks());
+  //console.log(stream.getTracks());
   tracks = stream.getTracks();
 }
 
 navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(gotStream); //TODO à retirer intelligement
 
 peerConnection1.onicecandidate = function(e) {
-  console.log(e.candidate);
+  //console.log(e.candidate);
   if(e.candidate == null) {
     console.log("peerConnection1 localDescription");
-    console.log(JSON.stringify(peerConnection1.localDescription));
+    //console.log(JSON.stringify(peerConnection1.localDescription));
     document.getElementById("offer").value = JSON.stringify(peerConnection1.localDescription);
   }
 }
 
 peerConnection2.onicecandidate = function(e) {
-  console.log(e.candidate);
+  //console.log(e.candidate);
   if(e.candidate == null)  {
     console.log("peerConnection2 localDescription");
-    console.log(JSON.stringify(peerConnection2.localDescription));
+    //console.log(JSON.stringify(peerConnection2.localDescription));
     document.getElementById("answer").value = JSON.stringify(peerConnection2.localDescription);
   }
 }
@@ -73,11 +73,22 @@ peerConnection2.oniceconnectionstatechange = function(e) {
 }
 //END DEBUG
 
+peerConnection1.ontrack = function(e) {
+  //console.log(e);
+  var audio = document.getElementById('audio');
+  audio.srcObject = e.streams[0];
+  audio.play();
+}
+
+peerConnection2.ontrack = function(e) {
+  //console.log(e);
+  var audio = document.getElementById('audio');
+  audio.srcObject = e.streams[0];
+  audio.play();
+}
+
 function createOffer() { //DIFF Datachannel
   navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
-    var audio = document.getElementById('audio');
-    audio.srcObject = stream;
-    audio.play();
     peerConnection1.addTrack(tracks[0]);
     dataChannel1 = peerConnection1.createDataChannel("dc1", {negotiated: true, id: 0});
     dataChannel1.onopen= function(event) {
@@ -85,7 +96,7 @@ function createOffer() { //DIFF Datachannel
       isDataChannel1Open = true;
     }
     dataChannel1.onmessage = function(event) {
-      console.log(event.data);
+      //console.log(event.data);
       showMessage(event.data, "pc2");
     }
     peerConnection1.createOffer().then(function(offer) {
@@ -98,9 +109,6 @@ function receivedOffer(){
   var offer = document.getElementById("offer").value;
 
   navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
-    var audio = document.getElementById('audio');
-    audio.srcObject = stream;
-    audio.play();
     peerConnection2.addTrack(tracks[0]);
     dataChannel2 = peerConnection2.createDataChannel("dc2", {negotiated: true, id: 0});
     dataChannel2.onopen= function(event) {
@@ -108,7 +116,7 @@ function receivedOffer(){
       isDataChannel2Open = true;
     }
     dataChannel2.onmessage = function(event) {
-      console.log(event.data);
+      //console.log(event.data);
       showMessage(event.data, "pc2");
     }
     peerConnection2.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer)));
