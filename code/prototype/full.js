@@ -75,6 +75,9 @@ peerConnection2.oniceconnectionstatechange = function(e) {
 
 function createOffer() { //DIFF Datachannel
   navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
+    var audio = document.getElementById('audio');
+    audio.srcObject = stream;
+    audio.play();
     peerConnection1.addTrack(tracks[0]);
     dataChannel1 = peerConnection1.createDataChannel("dc1", {negotiated: true, id: 0});
     dataChannel1.onopen= function(event) {
@@ -95,6 +98,9 @@ function receivedOffer(){
   var offer = document.getElementById("offer").value;
 
   navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function(stream) {
+    var audio = document.getElementById('audio');
+    audio.srcObject = stream;
+    audio.play();
     peerConnection2.addTrack(tracks[0]);
     dataChannel2 = peerConnection2.createDataChannel("dc2", {negotiated: true, id: 0});
     dataChannel2.onopen= function(event) {
