@@ -17,6 +17,132 @@ var remote = new RTCPeerConnection(conf, opt);
 var dataChannel1 = null;
 var dataChannel2 = null;
 
+var connSignalingServer = null;
+//:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
+var other_username = "You";
+var my_username = "Me";
+//:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
+//:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
+$(document).ready(e => {
+  $("#username").val("Me");
+  $("#url").val("192.168.0.15");
+  $("#port").val("9090");
+
+  //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
+  $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
+});
+
+
+
+function connectToSignalingServer(){
+
+  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
+  if(connSignalingServer != null){
+    console.log("Already connected to a signaling server. ");
+    return;
+  }
+  var address = $("#url").val();
+  var port = $("#port").val();
+  var username = $("#username").val();
+  //Regex match
+  if(!(address == null || address == "") && !(port == null || port == "")
+  && !(username == null || username == "")
+  ){
+    connSignalingServer = createConnectionToSignalingServer(address, port, username);
+    connSignalingServer.onopen = e => {
+                                console.log('socket connection opened properly');
+                                var message = {
+                                  type: "login",
+                                  username: username
+                                };
+
+                                sendMessageToSignalingServer(message);
+                              }
+  }else{
+    console.log("Paramêtres manquants pour effectuer la connexion. ");
+  }
+}
+
+function createConnectionToSignalingServer(address, port, username){
+  console.log("Connexion à "+ address +" au port "+ port +". ");
+  var ws = new WebSocket("ws://"+address+":"+port)
+
+  ws.onmessage = function (evt) {
+      console.log("[Before Processing] Message received = "+evt.data);
+      var data;
+      //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
+      try {
+        data = JSON.parse(evt.data);
+        //:TODO:GOVIN:2020-02-20:Add the message in a log file
+      } catch (e) {
+        console.log("Invalid JSON");
+        data = {};
+        //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+      }
+
+      switch (data.type) {
+
+         case "offer":
+            console.log("Offer : ");
+            console.log(data);
+            //:GLITCH:GOVIN:2020-02-20:Awful to change
+            $("#offer").val(data.offer);
+            other_username = data.from;
+            testDevices(receivedOffer);
+            break;
+
+         case "answer":
+            console.log("Answer : ");
+            console.log(data);
+            //:GLITCH:GOVIN:2020-02-20:Awful to change
+            $("#answer").val(data.answer);
+            receivedAnswer();
+            break;
+
+         case "candidate":
+            console.log("Candidate : "+data);
+            break;
+
+        case "comment":
+          console.log("comment : "+data);
+          break;
+
+        case "login":
+          console.log("login : ");
+          console.log(data);
+          //:GLITCH:GOVIN:2020-02-20:To change
+          if(data.success){
+            my_username = data.to;
+          }
+
+          break;
+
+         default:
+            console.log("Default on message :");
+            console.log(data);
+            break;
+      }
+   };
+
+  ws.onclose = function () {
+      console.log("Connection closed...");
+  };
+
+  ws.onerror = function(err){
+    console.error("Erreur lors de la connection à la WebSocket : ", err);
+  }
+
+  return ws;
+}
+function sendMessageToSignalingServer(message){
+  if(connSignalingServer != null){
+    connSignalingServer.send(JSON.stringify(message));
+  }else{
+    console.log("Error : No connection to signaling server. ");
+  }
+
+}
+
 
 //Events
 local.onicecandidate = function(e) {
@@ -26,6 +152,13 @@ local.onicecandidate = function(e) {
     //console.log(JSON.stringify(local.localDescription));
     var offer = JSON.stringify(local.localDescription);
     document.getElementById("offer").value = offer;
+    console.log("Sending offer through signaling server... ");
+    var message = {
+      type:"offer",
+      to:other_username,
+      offer: offer
+    }
+    sendMessageToSignalingServer(message);
   }
 }
 
@@ -36,6 +169,14 @@ remote.onicecandidate = function(e) {
     //console.log(JSON.stringify(remote.localDescription));
     var answer = JSON.stringify(remote.localDescription)
     document.getElementById("answer").value = answer;
+
+    console.log("Sending answer through signaling server... ");
+    var message = {
+      type:"answer",
+      to:other_username,
+      answer: answer
+    }
+    sendMessageToSignalingServer(message);
 
   }
 }
