@@ -1,7 +1,7 @@
 var tracks = [];
 
 var conf = {iceServers: [
-              {url: "stun:stun.l.google.com:19302"}/*,
+              {urls: "stun:stun.l.google.com:19302"}/*,
               {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
               ]
             };
@@ -17,23 +17,56 @@ var remote = new RTCPeerConnection(conf, opt);
 var dataChannel1 = null, isDataChannel1Open = false;
 var dataChannel2 = null, isDataChannel2Open = false;
 
+var connSignalingServer = null;
+
+//:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
+//:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
+$(document).ready(e => {
+  $("#username").val("Me");
+  $("#url").val("192.168.0.15");
+  $("#port").val("9090");
+
+  //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
+  $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
+});
 
 
-function connectToSignalingServer(address, port, userId){
+
+function connectToSignalingServer(){
+
+  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
+  if(connSignalingServer != null){
+    console.log("Already connected to a signaling server. ");
+    return;
+  }
+  var address = $("#url").val();
+  var port = $("#port").val();
+  var username = $("#username").val();
+  //Regex match
+  if(!(address == null || address == "") && !(port == null || port == "")
+  && !(username == null || username == "")
+  ){
+    connSignalingServer = createConnectionToSignalingServer(address, port, username);
+    connSignalingServer.onopen = e => {
+                                console.log('socket connection opened properly');
+                                var message = {
+                                  type: "login",
+                                  username: username
+                                };
+
+                                sendMessageToSignalingServer(message);
+                              }
+  }else{
+    console.log("Paramêtres manquants pour effectuer la connexion. ");
+  }
+}
+
+function createConnectionToSignalingServer(address, port, username){
   console.log("Connexion à "+ address +" au port "+ port +". ");
   var ws = new WebSocket("ws://"+address+":"+port)
-  ws.onopen = function () {
-      console.log('socket connection opened properly');
-      var message = {
-        type: "login",
-        username: userId
-      };
-
-      ws.send(JSON.stringify(message)); // send a message
-  };
 
   ws.onmessage = function (evt) {
-      console.log("Message received = " + evt.data);
+      console.log("[Before Processing] Message received = " + evt.data);
       var data = evt.data;
       switch (data.type) {
 
@@ -48,8 +81,9 @@ function connectToSignalingServer(address, port, userId){
          case "candidate":
             console.log("Candidate : ", JSON.decode(data));
             break;
+
          default:
-            console.log("Default on message");
+            console.log("Default on message :" + data);
             break;
       }
    };
@@ -64,6 +98,14 @@ function connectToSignalingServer(address, port, userId){
 
   return ws;
 }
+function sendMessageToSignalingServer(message){
+  if(connSignalingServer != null){
+    connSignalingServer.send(JSON.stringify(message));
+  }else{
+    console.log("Error : No connection to signaling server. ");
+  }
+
+}
 
 
 //Events
@@ -73,6 +115,8 @@ local.onicecandidate = function(e) {
     console.log("offer done");
     //console.log(JSON.stringify(local.localDescription));
     document.getElementById("offer").value = JSON.stringify(local.localDescription);
+    console.log("Sending offer through signaling server... ");
+    connSignalingServer
   }
 }
 
