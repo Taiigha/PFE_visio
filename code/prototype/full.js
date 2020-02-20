@@ -18,7 +18,9 @@ var dataChannel1 = null, isDataChannel1Open = false;
 var dataChannel2 = null, isDataChannel2Open = false;
 
 var connSignalingServer = null;
+//:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
 var other_username = "You";
+var my_username = "Me";
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
 //:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 $(document).ready(e => {
@@ -66,25 +68,58 @@ function createConnectionToSignalingServer(address, port, username){
   var ws = new WebSocket("ws://"+address+":"+port)
 
   ws.onmessage = function (evt) {
-      console.log("[Before Processing] Message received = " + evt.data);
-      var data = evt.data;
+      console.log("[Before Processing] Message received = "+evt.data);
+      var data;
+      //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
+      try {
+        data = JSON.parse(evt.data);
+        //:TODO:GOVIN:2020-02-20:Add the message in a log file
+      } catch (e) {
+        console.log("Invalid JSON");
+        data = {};
+        //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+      }
+
       switch (data.type) {
 
          case "offer":
-            console.log("Offer : ", JSON.decode(data));
-            
+            console.log("Offer : ");
+            console.log(data);
+            //:GLITCH:GOVIN:2020-02-20:Awful to change
+            $("#offer").val(data.offer);
+            other_username = data.from;
+            testDevices(receivedOffer);
             break;
 
          case "answer":
-            console.log("Answer : ", JSON.decode(data));
+            console.log("Answer : ");
+            console.log(data);
+            //:GLITCH:GOVIN:2020-02-20:Awful to change
+            $("#answer").val(data.answer);
+            receivedAnswer();
             break;
 
          case "candidate":
-            console.log("Candidate : ", JSON.decode(data));
+            console.log("Candidate : "+data);
             break;
 
+        case "comment":
+          console.log("comment : "+data);
+          break;
+
+        case "login":
+          console.log("login : ");
+          console.log(data);
+          //:GLITCH:GOVIN:2020-02-20:To change
+          if(data.success){
+            my_username = data.to;
+          }
+
+          break;
+
          default:
-            console.log("Default on message :" + data);
+            console.log("Default on message :");
+            console.log(data);
             break;
       }
    };
@@ -132,7 +167,17 @@ remote.onicecandidate = function(e) {
   if(e.candidate == null)  {
     console.log("answer done");
     //console.log(JSON.stringify(remote.localDescription));
-    document.getElementById("answer").value = JSON.stringify(remote.localDescription);
+    var answer = JSON.stringify(remote.localDescription)
+    document.getElementById("answer").value = answer;
+
+    console.log("Sending answer through signaling server... ");
+    var message = {
+      type:"answer",
+      to:other_username,
+      answer: answer
+    }
+    sendMessageToSignalingServer(message);
+
   }
 }
 
