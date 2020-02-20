@@ -17,6 +17,55 @@ var remote = new RTCPeerConnection(conf, opt);
 var dataChannel1 = null, isDataChannel1Open = false;
 var dataChannel2 = null, isDataChannel2Open = false;
 
+
+
+function connectToSignalingServer(address, port, userId){
+  console.log("Connexion à "+ address +" au port "+ port +". ");
+  var ws = new WebSocket("ws://"+address+":"+port)
+  ws.onopen = function () {
+      console.log('socket connection opened properly');
+      var message = {
+        type: "login",
+        username: userId
+      };
+
+      ws.send(JSON.stringify(message)); // send a message
+  };
+
+  ws.onmessage = function (evt) {
+      console.log("Message received = " + evt.data);
+      var data = evt.data;
+      switch (data.type) {
+
+         case "offer":
+            console.log("Offer : ", JSON.decode(data));
+            break;
+
+         case "answer":
+            console.log("Answer : ", JSON.decode(data));
+            break;
+
+         case "candidate":
+            console.log("Candidate : ", JSON.decode(data));
+            break;
+         default:
+            console.log("Default on message");
+            break;
+      }
+   };
+
+  ws.onclose = function () {
+      console.log("Connection closed...");
+  };
+
+  ws.onerror = function(err){
+    console.error("Erreur lors de la connection à la WebSocket : ", err);
+  }
+
+  return ws;
+}
+
+
 //Events
 local.onicecandidate = function(e) {
   //console.log(e.candidate);
