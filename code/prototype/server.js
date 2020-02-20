@@ -51,6 +51,7 @@ function login(connection, data){
       type: "login",
       success: true,
       from: server_name,
+      to: data.username,
       comment: "Welcome "+connection.username+" !"
     };
     sendTo(connection, message);
