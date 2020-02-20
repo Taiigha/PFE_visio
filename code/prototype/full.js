@@ -18,7 +18,7 @@ var dataChannel1 = null, isDataChannel1Open = false;
 var dataChannel2 = null, isDataChannel2Open = false;
 
 var connSignalingServer = null;
-
+var other_username = "You";
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
 //:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 $(document).ready(e => {
@@ -72,6 +72,7 @@ function createConnectionToSignalingServer(address, port, username){
 
          case "offer":
             console.log("Offer : ", JSON.decode(data));
+            
             break;
 
          case "answer":
@@ -114,9 +115,15 @@ local.onicecandidate = function(e) {
   if(e.candidate == null) {
     console.log("offer done");
     //console.log(JSON.stringify(local.localDescription));
-    document.getElementById("offer").value = JSON.stringify(local.localDescription);
+    var offer = JSON.stringify(local.localDescription);
+    document.getElementById("offer").value = offer;
     console.log("Sending offer through signaling server... ");
-    connSignalingServer
+    var message = {
+      type:"offer",
+      to:other_username,
+      offer: offer
+    }
+    sendMessageToSignalingServer(message);
   }
 }
 
