@@ -14,8 +14,8 @@ var opt = {optional: [
 var local = new RTCPeerConnection(conf, opt);
 var remote = new RTCPeerConnection(conf, opt);
 
-var dataChannel1 = null, isDataChannel1Open = false;
-var dataChannel2 = null, isDataChannel2Open = false;
+var dataChannel1 = null;
+var dataChannel2 = null;
 
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
@@ -209,15 +209,17 @@ remote.oniceconnectionstatechange = function(e) {
 function sendMessage(){
   var text = document.getElementById("textToSend").value;
 
-  showMessage(text, "local"); //TODO username
+  if(text != "") {
+    showMessage(text, "username"); //TODO:JCAMY:Replace it with real username
 
-  document.getElementById("textToSend").value = "";
+    document.getElementById("textToSend").value = "";
 
-  if (isDataChannel1Open) { //TODO Peut on envoyer sur un seul channel ?
-    dataChannel1.send(text);
-  }
-  if (isDataChannel2Open) {
-    dataChannel2.send(text);
+    if (dataChannel1 != null) {
+      dataChannel1.send(text);
+    }
+    if (dataChannel2 != null) {
+      dataChannel2.send(text);
+    }
   }
 }
 
@@ -250,7 +252,6 @@ function testDevices(callback) {
 function setUpDataChannel(dataChannel, username){
   dataChannel.onopen= function(event) {
     dataChannel.send(username + " connected to chatbox");
-    isDataChannel1Open = true;
   }
 
   dataChannel.onmessage = function(event) {
@@ -260,6 +261,7 @@ function setUpDataChannel(dataChannel, username){
 
 function setUpAudio(peer) {
   peer.ontrack = function(e) {
+    var audio = document.getElementById("audio");
     audio.srcObject = e.streams[0];
     audio.play();
   }
@@ -269,11 +271,11 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
     //Retrieve tracks
     tracks =  stream.getTracks();
-    local.addTrack(tracks[0]); //TODO regarder comment ça fonctionne avec video
+    local.addTrack(tracks[0]); //TODO:JCAMY:Find if it is necessary to do differently with video balises : is there more than 1 tracks ? Then how to detect which one we want to use.
 
     //Create datachannel
     dataChannel1 = local.createDataChannel("dc1", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel1, "local");
+    setUpDataChannel(dataChannel1, "sender");
 
     setUpAudio(local);
 
@@ -301,7 +303,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     //Create datachannel
     dataChannel2 = remote.createDataChannel("dc2", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel2, "remote");
+    setUpDataChannel(dataChannel2, "receiver");
 
     setUpAudio(remote);
 
