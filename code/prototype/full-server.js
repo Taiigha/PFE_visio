@@ -253,9 +253,10 @@ function testDevices(callback) {
   //Test if audio and video devices are availables
   navigator.mediaDevices.enumerateDevices().then(function(devices) {
     devices.forEach(function(device) {
+      console.log(device);
       if(device.kind === "audioinput")
         isAudioAvailable = true;
-      if(device.king === "videoinput")
+      if(device.kind === "videoinput")
         isVideoAvailable = true;
     });
     callback(isAudioAvailable, isVideoAvailable);

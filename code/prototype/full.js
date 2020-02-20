@@ -98,7 +98,7 @@ function testDevices(callback) {
     devices.forEach(function(device) {
       if(device.kind === "audioinput")
         isAudioAvailable = true;
-      if(device.king === "videoinput")
+      if(device.kind === "videoinput")
         isVideoAvailable = true;
     });
     callback(isAudioAvailable, isVideoAvailable);
