@@ -248,12 +248,13 @@ wss.on('connection', function(connection) {
           sendTo(conn, message);
           //:TODO:GOVIN:2020-02-20:Add the message in a log file
         }
-
-
       }
+        console.log(connection.username+" user has disconnected. ");
     }else{
       //:TODO:GOVIN:2020-02-20:Add the message in a log file "anonymous user disconnected"
+      console.log("Anonymous user has disconnected. ");
     }
+
   });
 
   //:GLITCH:GOVIN:2020-02-20:type might be ambiguous or inadequate
