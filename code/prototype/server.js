@@ -236,10 +236,9 @@ wss.on('connection', function(connection) {
         //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
         var conn = users[connection.otherName];
-        conn.otherName = null;
-
         //:TODO:GOVIN:2020-02-20:Manage many users
         if(conn != null) {
+          conn.otherName = null;
           var message = {
                         type: "leave",
                         from: connection.username,
