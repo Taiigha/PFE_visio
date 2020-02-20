@@ -143,6 +143,34 @@ function sendMessageToSignalingServer(message){
 
 }
 
+function sendOffer(offer){
+  if(offer == null){
+    console.log("Offer is null while trying to send it. ");
+    return;
+  }
+
+  console.log("Sending offer through signaling server... ");
+  var message = {
+    type:"offer",
+    to:other_username,
+    offer: offer
+  }
+  sendMessageToSignalingServer(message);
+}
+
+function sendAnswer(answer){
+  if(anwser == null){
+    console.log("Answer is null while trying to send it. ");
+    return;
+  }
+  console.log("Sending answer through signaling server... ");
+  var message = {
+    type:"answer",
+    to:other_username,
+    answer: answer
+  }
+  sendMessageToSignalingServer(message);
+}
 
 //Events
 local.onicecandidate = function(e) {
@@ -152,13 +180,8 @@ local.onicecandidate = function(e) {
     //console.log(JSON.stringify(local.localDescription));
     var offer = JSON.stringify(local.localDescription);
     document.getElementById("offer").value = offer;
-    console.log("Sending offer through signaling server... ");
-    var message = {
-      type:"offer",
-      to:other_username,
-      offer: offer
-    }
-    sendMessageToSignalingServer(message);
+
+    sendOffer(offer);
   }
 }
 
@@ -170,14 +193,7 @@ remote.onicecandidate = function(e) {
     var answer = JSON.stringify(remote.localDescription)
     document.getElementById("answer").value = answer;
 
-    console.log("Sending answer through signaling server... ");
-    var message = {
-      type:"answer",
-      to:other_username,
-      answer: answer
-    }
-    sendMessageToSignalingServer(message);
-
+    sendAnswer(answer);
   }
 }
 
