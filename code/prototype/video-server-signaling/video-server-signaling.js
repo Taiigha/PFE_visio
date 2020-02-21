@@ -118,6 +118,8 @@ function createConnectionToSignalingServer(address, port, username){
       //  console.log(data);
         //:GLITCH:GOVIN:2020-02-20:To change
         if(data.success){
+          if(data.to == other_username)
+            other_username = my_username;
           my_username = data.to;
         }
 
@@ -199,6 +201,16 @@ function bindVideoWithStream(video, stream){
 }
 
 remote.ontrack = function(e){
+  var receiveVideo = $("#receiveVideo")[0];
+  var stream = null;
+
+  if (e.streams && e.streams[0]) {
+    stream = e.streams[0];
+    bindVideoWithStream(receiveVideo, stream);
+  }
+}
+
+local.ontrack = function(e){
   var receiveVideo = $("#receiveVideo")[0];
   var stream = null;
 
@@ -344,7 +356,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     tracks =  stream.getTracks();
     for (const track of stream.getTracks()) {
-      local.addTrack(track, stream);
+      remote.addTrack(track, stream);
     }
 
     //::GOVIN:2020-02-20:Binding stream with sendVideo element
