@@ -50,6 +50,7 @@ $(document).ready(e => {
 
 function initPeers(){
   trackExecution('CALL : init');
+  $("#hangUpButton").prop("disabled", false);
   local = new RTCPeerConnection(conf, opt);
   remote = new RTCPeerConnection(conf, opt);
 
@@ -264,7 +265,6 @@ function initLocalEvent(){
     trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
     // console.log(local.connectionState);
     if(local.connectionState === "connected"){
-        $("#hangUpButton").prop("disabled", false);
         console.log("local connected");
     }
 
@@ -310,10 +310,8 @@ function initRemoteEvent(){
     trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
     // console.log(remote.connectionState);
     if(remote.connectionState === "connected"){
-      $("#hangUpButton").prop("disabled", false);
       console.log("remote connected");
     }
-    //:TODO -> Remote
 
   };
 
