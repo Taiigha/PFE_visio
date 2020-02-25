@@ -67,11 +67,9 @@ function hangUp(){
 
   remote.close();
   remote = null;
+
   stopStreamedVideo($("#sendVideo")[0]);
   stopStreamedVideo($("#receiveVideo")[0]);
-  //:TODO:GOVIN:2020-02-25:Message to "disconnected from chat"
-  dataChannel1.close();
-  dataChannel2.close();
 }
 
 
