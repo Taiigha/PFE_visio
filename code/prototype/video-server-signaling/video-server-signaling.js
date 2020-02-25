@@ -37,7 +37,15 @@ $(document).ready(e => {
   $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
 
   $("#callButton").on("click", call);
-  $("#hangUpButton").on("click", hangUp);
+  $("#hangUpButton").on("click", e => {
+    var message = {
+      type: "leave",
+      from: my_username,
+      to: other_username
+    };
+    sendMessageToSignalingServer(message);
+    hangUp();
+  });
 });
 
 function initPeers(){
@@ -54,8 +62,6 @@ function call(){
   initPeers();
 
   testDevices(createOffer);
-
-  $("#hangUpButton").prop("disabled", false);
 }
 
 function hangUp(){
@@ -158,6 +164,13 @@ function createConnectionToSignalingServer(address, port, username){
 
         break;
 
+      case "leave":
+        console.log("leave : ");
+        console.log(data);
+        hangUp();
+        break;
+
+
       default:
         console.log("Default on message :");
         console.log(data);
@@ -250,8 +263,11 @@ function initLocalEvent(){
   local.onconnectionstatechange = function(e) {
     trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
     // console.log(local.connectionState);
-    if(local.connectionState === "connected")
-      console.log("local connected");
+    if(local.connectionState === "connected"){
+        $("#hangUpButton").prop("disabled", false);
+        console.log("local connected");
+    }
+
   };
 
   local.oniceconnectionstatechange = function(e) {
@@ -293,8 +309,12 @@ function initRemoteEvent(){
   remote.onconnectionstatechange = function(e) {
     trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
     // console.log(remote.connectionState);
-    if(remote.connectionState === "connected")
+    if(remote.connectionState === "connected"){
+      $("#hangUpButton").prop("disabled", false);
       console.log("remote connected");
+    }
+    //:TODO -> Remote
+
   };
 
 
