@@ -10,6 +10,8 @@ var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
 ]
 };
+var debug = false;
+var perf = true;
 
 var local = new RTCPeerConnection(conf, opt);
 var remote = new RTCPeerConnection(conf, opt);
@@ -52,7 +54,7 @@ function hangUp(){
 }
 
 function connectToSignalingServer(){
-
+  trackExecution('CALL : connectToSignalingServer');
   //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
   if(connSignalingServer != null){
     console.log("Already connected to a signaling server. ");
@@ -80,6 +82,7 @@ function connectToSignalingServer(){
 }
 
 function createConnectionToSignalingServer(address, port, username){
+  trackExecution('CALL : createConnectionToSignalingServer');
   console.log("Connexion à "+ address +" au port "+ port +". ");
   var ws = new WebSocket("ws://"+address+":"+port)
 
@@ -91,7 +94,7 @@ function createConnectionToSignalingServer(address, port, username){
       data = JSON.parse(evt.data);
       //:TODO:GOVIN:2020-02-20:Add the message in a log file
     } catch (e) {
-      console.log("Invalid JSON");
+      console.log("ERR : Invalid JSON");
       data = {};
       //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     }
@@ -153,6 +156,7 @@ function createConnectionToSignalingServer(address, port, username){
   return ws;
 }
 function sendMessageToSignalingServer(message){
+  trackExecution('CALL : sendMessageToSignalingServer');
   if(connSignalingServer != null){
     connSignalingServer.send(JSON.stringify(message));
   }else{
@@ -162,6 +166,7 @@ function sendMessageToSignalingServer(message){
 }
 
 function sendOffer(offer){
+  trackExecution('CALL : sendOffer');
   if(offer == null){
     console.log("Offer is null while trying to send it. ");
     return;
@@ -177,6 +182,7 @@ function sendOffer(offer){
 }
 
 function sendAnswer(answer){
+  trackExecution('CALL : sendAnswer');
   if(answer == null){
     console.log("Answer is null while trying to send it. ");
     return;
@@ -192,6 +198,7 @@ function sendAnswer(answer){
 
 //Events
 local.onicecandidate = function(e) {
+  trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
   //console.log(e.candidate);
   if(e.candidate == null) {
     console.log("offer done");
@@ -203,6 +210,7 @@ local.onicecandidate = function(e) {
 }
 
 function bindVideoWithStream(video, stream){
+  trackExecution('CALL : bindVideoWithStream');
   video.srcObject = stream;
 
   video.onloadedmetadata = function(e) {
@@ -227,6 +235,7 @@ function stopStreamedVideo(videoElem) {
 
 
 remote.ontrack = function(e){
+  trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
   var receiveVideo = $("#receiveVideo")[0];
   var stream = null;
 
@@ -237,6 +246,7 @@ remote.ontrack = function(e){
 }
 
 local.ontrack = function(e){
+  trackExecution('EVENT : local.ontrack : ' + local.getTracks);
   var receiveVideo = $("#receiveVideo")[0];
   var stream = null;
 
@@ -249,6 +259,7 @@ local.ontrack = function(e){
 }
 
 remote.onicecandidate = function(e) {
+  trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
   //console.log(e.candidate);
   if(e.candidate == null)  {
     console.log("answer done");
@@ -259,31 +270,36 @@ remote.onicecandidate = function(e) {
 }
 
 local.onconnectionstatechange = function(e) {
+  trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
   // console.log(local.connectionState);
   if(local.connectionState === "connected")
-  console.log("pc1 connected")
+  console.log("local connected")
 }
 
 remote.onconnectionstatechange = function(e) {
+  trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
   // console.log(remote.connectionState);
   if(remote.connectionState === "connected")
-  console.log("pc2 connected")
+  console.log("remote connected")
 }
 
 local.oniceconnectionstatechange = function(e) {
+  trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
   // console.log(local.iceConnectionState);
   if(local.iceConnectionState === "connected")
-  console.log("pc1 connected (ice)")
+  console.log("local connected (ice)")
 }
 
 remote.oniceconnectionstatechange = function(e) {
+  trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
   // console.log(remote.iceConnectionState);
   if(remote.iceConnectionState === "connected")
-  console.log("pc2 connected (ice)")
+  console.log("remote connected (ice)")
 }
 //END Events
 
 function sendMessage(){
+  trackExecution('CALL : sendMessage');
   var text = document.getElementById("textToSend").value;
 
   if(text != "") {
@@ -301,6 +317,7 @@ function sendMessage(){
 }
 
 function showMessage(data, username) {
+  trackExecution('CALL : showMessage');
   var date = new Date();
   var log = document.createElement('p');
   var logValue = document.createTextNode(username + "[" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "] : " + data);
@@ -310,6 +327,7 @@ function showMessage(data, username) {
 }
 
 function testDevices(callback) {
+  trackExecution('CALL : testDevices');
   var isAudioAvailable = false, isVideoAvailable = false;
   //Test if audio and video devices are availables
   navigator.mediaDevices.enumerateDevices().then(function(devices) {
@@ -322,22 +340,24 @@ function testDevices(callback) {
     callback(isAudioAvailable, isVideoAvailable);
   })
   .catch(function(err) {
-    console.log(err.name + " : " + err.message);
+    console.log("ERR : " + err.name + " : " + err.message);
   });
 }
 
 function setUpDataChannel(dataChannel, username){
+  trackExecution('CALL : setUpDataChannel');
   dataChannel.onopen= function(event) {
     dataChannel.send(username + " connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
-    showMessage(event.data, username);
+    showMessage(event.data, "remote username");
   }
 }
 
 
 function createOffer(isAudioAvailable, isVideoAvailable) {
+  trackExecution('CALL : createOffer');
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
     //Retrieve tracks
     tracks =  stream.getTracks();
@@ -362,18 +382,19 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     //Create offer
     local.createOffer().then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
-        console.log(err.name + " : " + err.message);
+        console.log("ERR : " + err.name + " : " + err.message);
       });
     }).catch(function(err) {
-      console.log(err.name + " : " + err.message);
+      console.log("ERR : " + err.name + " : " + err.message);
     });
 
   }).catch(function(err) {
-    console.log(err.name + " : " + err.message);
+    console.log("ERR : " + err.name + " : " + err.message);
   });
 }
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
+  trackExecution('CALL : receivedOffer');
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
@@ -399,26 +420,39 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
-      console.log(err.name + " : " + err.message);
+      console.log("ERR : " + err.name + " : " + err.message);
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
-        console.log(err.name + " : " + err.message);
+        console.log("ERR : " + err.name + " : " + err.message);
       });
     }).catch(function(err) {
-      console.log(err.name + " : " + err.message);
+      console.log("ERR : " + err.name + " : " + err.message);
     });
 
   }).catch(function(err) {
-    console.log(err.name + " : " + err.message);
+    console.log("ERR : " + err.name + " : " + err.message);
   });
 }
 
 function receivedAnswer(){
+  trackExecution('CALL : receivedAnswer');
   var answer = currentAnswer;
   local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
-    console.log(err.name + " : " + err.message);
+    console.log("ERR : " + err.name + " : " + err.message);
   });
+}
+
+function trackExecution(data)
+{
+  if(debug)
+  {
+    if(perf)
+    {
+      //:TODO:ROUX:2020-02-25:add some information about performance
+    }
+    console.log(data)
+  }
 }
