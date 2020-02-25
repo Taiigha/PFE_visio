@@ -13,8 +13,8 @@ var opt = {optional: [
 var debug = false;
 var perf = true;
 
-var local = new RTCPeerConnection(conf, opt);
-var remote = new RTCPeerConnection(conf, opt);
+var local = null;
+var remote = null;
 
 var dataChannel1 = null;
 var dataChannel2 = null;
@@ -23,35 +23,53 @@ var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
 var other_username = "Me";
 var my_username = "Me";
-//:GLITCH:GOVIN:2020-02-20:
+
+
 var currentAnswer = null, currentOffer = null;
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
 //:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 $(document).ready(e => {
   $("#username").val("Me");
-  $("#url").val("192.168.0.15");
-  $("#port").val("9090");
+  $("#url").val("87.231.26.215");
+  $("#port").val("30033");
 
   //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
   $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
 
   $("#callButton").on("click", call);
+  $("#hangUpButton").on("click", hangUp);
 });
 
 
 function call(){
   console.log("Call function. ");
+  local = new RTCPeerConnection(conf, opt);
+  remote = new RTCPeerConnection(conf, opt);
+
+  initLocalEvent();
+  initRemoteEvent();
+
   testDevices(createOffer);
+
   $("#hangUpButton").prop("disabled", false);
-  $("#hangUpButton").on("click", hangUp);
 }
 
 function hangUp(){
-  console.log("HangUp function. ")
+  console.log("HangUp function. ");
   $("#hangUpButton").prop("disabled", true);
+
+  local.close();
+  local = null;
+
+  remote.close();
+  remote = null;
   stopStreamedVideo($("#sendVideo")[0]);
   stopStreamedVideo($("#receiveVideo")[0]);
+  //:TODO:GOVIN:2020-02-25:Message to "disconnected from chat"
+  dataChannel1.close();
+  dataChannel2.close();
 }
+
 
 function connectToSignalingServer(){
   trackExecution('CALL : connectToSignalingServer');
@@ -151,7 +169,7 @@ function createConnectionToSignalingServer(address, port, username){
 
   ws.onerror = function(err){
     console.error("Erreur lors de la connection à la WebSocket : ", err);
-  }
+  };
 
   return ws;
 }
@@ -196,17 +214,94 @@ function sendAnswer(answer){
   sendMessageToSignalingServer(message);
 }
 
-//Events
-local.onicecandidate = function(e) {
-  trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
-  //console.log(e.candidate);
-  if(e.candidate == null) {
-    console.log("offer done");
-    //console.log(JSON.stringify(local.localDescription));
-    currentOffer = JSON.stringify(local.localDescription);
 
-    sendOffer(currentOffer);
+function initLocalEvent(){
+  if(local == null){
+    console.log("Local RTCPeerConnection is null. ");
+    return;
   }
+  local.onicecandidate = function(e) {
+    trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
+    //console.log(e.candidate);
+    if(e.candidate == null) {
+      console.log("offer done");
+      //console.log(JSON.stringify(local.localDescription));
+      currentOffer = JSON.stringify(local.localDescription);
+
+      sendOffer(currentOffer);
+    }
+  };
+
+  local.ontrack = function(e){
+    trackExecution('EVENT : local.ontrack : ' + local.getTracks);
+    var receiveVideo = $("#receiveVideo")[0];
+    var stream = null;
+
+    if (e.streams && e.streams[0]) {
+      console.log(e.streams[0]);
+      console.log(e.streams[0].getTracks());
+      stream = e.streams[0];
+      bindVideoWithStream(receiveVideo, stream);
+    }
+  };
+
+  local.onconnectionstatechange = function(e) {
+    trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
+    // console.log(local.connectionState);
+    if(local.connectionState === "connected")
+      console.log("local connected");
+  };
+
+  local.oniceconnectionstatechange = function(e) {
+    trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
+    // console.log(local.iceConnectionState);
+    if(local.iceConnectionState === "connected")
+      console.log("local connected (ice)");
+  };
+}
+
+function initRemoteEvent(){
+  if(remote == null){
+    console.log("Remote RTCPeerConnection is null. ");
+    return;
+  }
+  remote.ontrack = function(e){
+    trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
+    var receiveVideo = $("#receiveVideo")[0];
+    var stream = null;
+
+    if (e.streams && e.streams[0]) {
+      stream = e.streams[0];
+    }
+    bindVideoWithStream(receiveVideo, stream);
+  };
+
+  remote.onicecandidate = function(e) {
+    trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
+    //console.log(e.candidate);
+    if(e.candidate == null)  {
+      console.log("answer done");
+      //console.log(JSON.stringify(remote.localDescription));
+      currentAnswer = JSON.stringify(remote.localDescription);
+      sendAnswer(currentAnswer);
+    }
+  };
+
+
+  remote.onconnectionstatechange = function(e) {
+    trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
+    // console.log(remote.connectionState);
+    if(remote.connectionState === "connected")
+      console.log("remote connected");
+  };
+
+
+  remote.oniceconnectionstatechange = function(e) {
+    trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
+    // console.log(remote.iceConnectionState);
+    if(remote.iceConnectionState === "connected")
+      console.log("remote connected (ice)");
+  };
 }
 
 function bindVideoWithStream(video, stream){
@@ -232,71 +327,6 @@ function stopStreamedVideo(videoElem) {
   });
   videoElem.srcObject = null;
 }
-
-
-remote.ontrack = function(e){
-  trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
-  var receiveVideo = $("#receiveVideo")[0];
-  var stream = null;
-
-  if (e.streams && e.streams[0]) {
-    stream = e.streams[0];
-    bindVideoWithStream(receiveVideo, stream);
-  }
-}
-
-local.ontrack = function(e){
-  trackExecution('EVENT : local.ontrack : ' + local.getTracks);
-  var receiveVideo = $("#receiveVideo")[0];
-  var stream = null;
-
-  if (e.streams && e.streams[0]) {
-    console.log(e.streams[0]);
-    console.log(e.streams[0].getTracks());
-    stream = e.streams[0];
-    bindVideoWithStream(receiveVideo, stream);
-  }
-}
-
-remote.onicecandidate = function(e) {
-  trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
-  //console.log(e.candidate);
-  if(e.candidate == null)  {
-    console.log("answer done");
-    //console.log(JSON.stringify(remote.localDescription));
-    currentAnswer = JSON.stringify(remote.localDescription);
-    sendAnswer(currentAnswer);
-  }
-}
-
-local.onconnectionstatechange = function(e) {
-  trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
-  // console.log(local.connectionState);
-  if(local.connectionState === "connected")
-  console.log("local connected")
-}
-
-remote.onconnectionstatechange = function(e) {
-  trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
-  // console.log(remote.connectionState);
-  if(remote.connectionState === "connected")
-  console.log("remote connected")
-}
-
-local.oniceconnectionstatechange = function(e) {
-  trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
-  // console.log(local.iceConnectionState);
-  if(local.iceConnectionState === "connected")
-  console.log("local connected (ice)")
-}
-
-remote.oniceconnectionstatechange = function(e) {
-  trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
-  // console.log(remote.iceConnectionState);
-  if(remote.iceConnectionState === "connected")
-  console.log("remote connected (ice)")
-}
-//END Events
 
 function sendMessage(){
   trackExecution('CALL : sendMessage');
@@ -346,12 +376,16 @@ function testDevices(callback) {
 
 function setUpDataChannel(dataChannel, username){
   trackExecution('CALL : setUpDataChannel');
-  dataChannel.onopen= function(event) {
+  dataChannel.onopen = function(event) {
     dataChannel.send(username + " connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
     showMessage(event.data, "remote username");
+  }
+
+  dataChannel.onclose = function(event){
+    showMessage("Has disconneted. ", username)
   }
 }
 
