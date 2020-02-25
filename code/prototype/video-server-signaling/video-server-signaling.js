@@ -248,28 +248,28 @@ local.onconnectionstatechange = function(e) {
   trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
   // console.log(local.connectionState);
   if(local.connectionState === "connected")
-  console.log("pc1 connected")
+  console.log("local connected")
 }
 
 remote.onconnectionstatechange = function(e) {
   trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
   // console.log(remote.connectionState);
   if(remote.connectionState === "connected")
-  console.log("pc2 connected")
+  console.log("remote connected")
 }
 
 local.oniceconnectionstatechange = function(e) {
   trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
   // console.log(local.iceConnectionState);
   if(local.iceConnectionState === "connected")
-  console.log("pc1 connected (ice)")
+  console.log("local connected (ice)")
 }
 
 remote.oniceconnectionstatechange = function(e) {
   trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
   // console.log(remote.iceConnectionState);
   if(remote.iceConnectionState === "connected")
-  console.log("pc2 connected (ice)")
+  console.log("remote connected (ice)")
 }
 //END Events
 
@@ -326,7 +326,7 @@ function setUpDataChannel(dataChannel, username){
   }
 
   dataChannel.onmessage = function(event) {
-    showMessage(event.data, username);
+    showMessage(event.data, "remote username");
   }
 }
 
