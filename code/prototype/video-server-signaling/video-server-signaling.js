@@ -19,7 +19,7 @@ var dataChannel2 = null;
 
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
-var other_username = "You";
+var other_username = "Me";
 var my_username = "Me";
 //:GLITCH:GOVIN:2020-02-20:
 var currentAnswer = null, currentOffer = null;
@@ -33,12 +33,23 @@ $(document).ready(e => {
   //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
   $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
 
-  $("#callButton").on("click", e => {
-    testDevices(createOffer);
-  })
+  $("#callButton").on("click", call);
 });
 
 
+function call(){
+  console.log("Call function. ");
+  testDevices(createOffer);
+  $("#hangUpButton").prop("disabled", false);
+  $("#hangUpButton").on("click", hangUp);
+}
+
+function hangUp(){
+  console.log("HangUp function. ")
+  $("#hangUpButton").prop("disabled", true);
+  stopStreamedVideo($("#sendVideo")[0]);
+  stopStreamedVideo($("#receiveVideo")[0]);
+}
 
 function connectToSignalingServer(){
 
@@ -51,8 +62,7 @@ function connectToSignalingServer(){
   var port = $("#port").val();
   var username = $("#username").val();
   //Regex match
-  if(!(address == null || address == "") && !(port == null || port == "")
-  && !(username == null || username == "")
+  if(!(address == null || address == "") && !(port == null || port == "") && !(username == null || username == "")
   ){
     connSignalingServer = createConnectionToSignalingServer(address, port, username);
     connSignalingServer.onopen = e => {
@@ -200,6 +210,22 @@ function bindVideoWithStream(video, stream){
   };
 }
 
+function stopStreamedVideo(videoElem) {
+  if(videoElem == null){
+    console.log("stopStreamedVideo: videoElem is null. ");
+    return;
+  }
+
+  const stream = videoElem.srcObject;
+  const tracks = stream.getTracks();
+
+  tracks.forEach(function(track) {
+    track.stop();
+  });
+  videoElem.srcObject = null;
+}
+
+
 remote.ontrack = function(e){
   var receiveVideo = $("#receiveVideo")[0];
   var stream = null;
@@ -215,7 +241,6 @@ local.ontrack = function(e){
   var stream = null;
 
   if (e.streams && e.streams[0]) {
-    console.log("COUCOU");
     console.log(e.streams[0]);
     console.log(e.streams[0].getTracks());
     stream = e.streams[0];
