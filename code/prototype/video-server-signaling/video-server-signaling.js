@@ -10,7 +10,7 @@ var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
 ]
 };
-var debug = false;
+var debug = true;
 var perf = true;
 
 var local = null;
@@ -21,7 +21,7 @@ var dataChannel2 = null;
 
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
-var other_username = "Me";
+var other_username = "You";
 var my_username = "Me";
 
 
