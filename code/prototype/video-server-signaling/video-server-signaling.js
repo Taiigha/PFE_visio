@@ -433,7 +433,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
   trackExecution('CALL : receivedOffer');
-  init();
+  initPeers();
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
