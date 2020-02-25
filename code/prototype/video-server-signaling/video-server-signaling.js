@@ -40,14 +40,18 @@ $(document).ready(e => {
   $("#hangUpButton").on("click", hangUp);
 });
 
-
-function call(){
-  console.log("Call function. ");
+function initPeers(){
+  trackExecution('CALL : init');
   local = new RTCPeerConnection(conf, opt);
   remote = new RTCPeerConnection(conf, opt);
 
   initLocalEvent();
   initRemoteEvent();
+}
+
+function call(){
+  console.log("Call function. ");
+  initPeers();
 
   testDevices(createOffer);
 
@@ -429,6 +433,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
   trackExecution('CALL : receivedOffer');
+  init();
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
