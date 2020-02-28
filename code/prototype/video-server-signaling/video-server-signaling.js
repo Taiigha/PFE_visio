@@ -1,10 +1,10 @@
 var tracks = [];
 
-var conf = {iceServers: [
-  {urls: "stun:stun.l.google.com:19302"}/*,
-  {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-]
-};
+var conf = null;//{iceServers: [
+  //{urls: "stun:stun.l.google.com:19302"}/*,
+  //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
+//]
+//};
 
 var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
@@ -30,8 +30,8 @@ var currentAnswer = null, currentOffer = null;
 //:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 $(document).ready(e => {
   $("#username").val("Me");
-  $("#url").val("87.231.26.215");
-  $("#port").val("30033");
+  $("#url").val("192.168.0.13");
+  $("#port").val("9090");
 
   //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
   $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
@@ -46,11 +46,16 @@ $(document).ready(e => {
     sendMessageToSignalingServer(message);
     hangUp();
   });
+
+  initPeers();
+
 });
+
 
 function initPeers(){
   trackExecution('CALL : init');
   $("#hangUpButton").prop("disabled", false);
+
   local = new RTCPeerConnection(conf, opt);
   remote = new RTCPeerConnection(conf, opt);
 
@@ -59,8 +64,8 @@ function initPeers(){
 }
 
 function call(){
+  //:BUG:GOVIN:2020-02-28:When audio+video vs only audio call
   console.log("Call function. ");
-  initPeers();
 
   testDevices(createOffer);
 }
@@ -75,8 +80,13 @@ function hangUp(){
   remote.close();
   remote = null;
 
+  dataChannel1 = null;
+  dataChannel2 = null;
+
   stopStreamedVideo($("#sendVideo")[0]);
   stopStreamedVideo($("#receiveVideo")[0]);
+
+  initPeers();
 }
 
 
@@ -142,7 +152,7 @@ function createConnectionToSignalingServer(address, port, username){
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
-        receivedAnswer();
+        receivedAnswer(currentAnswer);
         break;
 
       case "candidate":
@@ -230,11 +240,14 @@ function sendAnswer(answer){
   sendMessageToSignalingServer(message);
 }
 
-
+var isNegotiating = false;
 function initLocalEvent(){
   if(local == null){
     console.log("Local RTCPeerConnection is null. ");
     return;
+  }
+    local.onsignalingstatechange = (e) => {  // Workaround for Chrome: skip nested negotiations
+    isNegotiating = (local.signalingState != "stable");
   }
   local.onicecandidate = function(e) {
     trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
@@ -420,7 +433,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     }
     //local.addTrack(tracks); //TODO:JCAMY:Find if it is necessary to do differently with video balises : is there more than 1 tracks ? Then how to detect which one we want to use.
 
-    //::GOVIN:2020-02-20:Binding stream with sendVideo element
+    //:COMMENT:GOVIN:2020-02-20:Binding stream with sendVideo element
     var video = $("#sendVideo")[0];
     video.srcObject = stream;
 
@@ -449,7 +462,6 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
   trackExecution('CALL : receivedOffer');
-  initPeers();
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
@@ -492,9 +504,9 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
   });
 }
 
-function receivedAnswer(){
+function receivedAnswer(answer){
   trackExecution('CALL : receivedAnswer');
-  var answer = currentAnswer;
+
   local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
     console.log("ERR : " + err.name + " : " + err.message);
   });
