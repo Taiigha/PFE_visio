@@ -1,11 +1,11 @@
 console.log("Coucou");
 var tracks = [];
 
-var conf = {iceServers: [
-  {urls: "stun:stun.l.google.com:19302"}/*,
-  {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-]
-};
+var conf = null;//{iceServers: [
+  //{urls: "stun:stun.l.google.com:19302"}/*,
+  //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
+//]
+//};
 
 var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
@@ -37,8 +37,8 @@ var currentAnswer = null, currentOffer = null;
 
 /*$(document).ready(e => {
   $("#username").val("Me");
-  $("#url").val("87.231.26.215");
-  $("#port").val("30033");
+  $("#url").val("192.168.0.13");
+  $("#port").val("9090");
 
   //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
   $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
@@ -79,6 +79,7 @@ function wantToHangUp(){
   hangUp();
 }
 
+
 function initPeers(){
   trackExecution('CALL : init');
   document.getElementById('hangUpButton').disabled = false;
@@ -92,7 +93,8 @@ function initPeers(){
 
 function call(){
   trackExecution("Call function. ");
-  initPeers();
+
+  // TODO ici ? initPeers();
 
   testDevices(createOffer);
 }
@@ -113,6 +115,12 @@ function hangUp(){
 
   stopStreamedVideo(document.getElementById('sendVideo'));
   stopStreamedVideo(document.getElementById('receiveVideo'));
+
+  dataChannel1 = null;
+  dataChannel2 = null;
+
+  // TODO ou la ? initPeers();
+  initPeers();
 }
 
 
@@ -179,7 +187,7 @@ function createConnectionToSignalingServer(address, port, username){
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
-        receivedAnswer();
+        receivedAnswer(currentAnswer);
         break;
 
       case "candidate":
@@ -267,11 +275,14 @@ function sendAnswer(answer){
   sendMessageToSignalingServer(message);
 }
 
-
+var isNegotiating = false;
 function initLocalEvent(){
   if(local == null){
     trackExecution("Local RTCPeerConnection is null. ");
     return;
+  }
+    local.onsignalingstatechange = (e) => {  // Workaround for Chrome: skip nested negotiations
+    isNegotiating = (local.signalingState != "stable");
   }
   local.onicecandidate = function(e) {
     trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
@@ -488,7 +499,6 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
   trackExecution('CALL : receivedOffer');
-  initPeers();
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
@@ -532,9 +542,9 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
   });
 }
 
-function receivedAnswer(){
+function receivedAnswer(answer){
   trackExecution('CALL : receivedAnswer');
-  var answer = currentAnswer;
+
   local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
     trackExecution("ERR : " + err.name + " : " + err.message);
   });
