@@ -26,6 +26,15 @@ var wss = new WebSocketServer({port: 9090});
 var users = {};
 var server_name = "Server";
 
+
+function saveTrace(connection, data){
+  console.log("Save trace "+connection.username);
+  const fs = require('fs')
+  var donnees = data.logs
+  fs.writeFileSync('logs', donnees)
+}
+
+
 function login(connection, data){
   console.log("User "+data.username+" trying to log... ");
 
@@ -212,6 +221,10 @@ wss.on('connection', function(connection) {
                       };
         sendTo(connection, message);
       }
+      break;
+
+      case "logs":
+        saveTrace(connection, data);
       break;
 
       default:

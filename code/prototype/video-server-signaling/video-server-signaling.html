@@ -20,21 +20,21 @@
 		<h1>WebRTC Visioconference</h1>
 		<div>
 			<label for="username">Username: </label>
-			<input type="text" name="url" id="username" required="">
+			<input type="text" name="url" id="username" value="Me" required="">
 
 			<label for="url">URL: </label>
-			<input type="text" name="url" id="url" required="">
+			<input type="text" name="url" id="url" value="127.0.0.1" required="">
 
 			<label for="port">Port: </label>
-			<input type="text" name="port" id="port" required="">
+			<input type="text" name="port" id="port" value="9090" required="">
 
 
-			<button id="connectToSignalingServerButton">Connect to Signaling Server</button>
+			<button id="connectToSignalingServerButton"  onclick="connectToSignalingServer()">Connect to Signaling Server</button>
 		</div>
 
 		<div id="buttons">
-			<button id="callButton">Appeler</button>
-			<button id="hangUpButton" disabled>Raccrocher</button>
+			<button id="callButton" onclick="call()">Appeler</button>
+			<button id="hangUpButton" disabled onclick="wantToHangUp()">Raccrocher</button>
 		</div>
 
 
