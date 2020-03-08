@@ -93,9 +93,7 @@ function initPeers(){
 
 function call(){
   trackExecution("Call function. ");
-
-  // TODO ici ? initPeers();
-
+  initPeers();
   testDevices(createOffer);
 }
 
@@ -119,8 +117,6 @@ function hangUp(){
   dataChannel1 = null;
   dataChannel2 = null;
 
-  // TODO ou la ? initPeers();
-  initPeers();
 }
 
 
@@ -499,6 +495,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
 function receivedOffer(isAudioAvailable, isVideoAvailable){
   trackExecution('CALL : receivedOffer');
+  initPeers();
   var offer = currentOffer;
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
