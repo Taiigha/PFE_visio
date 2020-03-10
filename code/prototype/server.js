@@ -22,6 +22,8 @@ var WebSocketServer = require('ws').Server;
 //:COMMENT:GOVIN:2020-02-20:Creating the server on the 9090 port
 var wss = new WebSocketServer({port: 9090});
 
+console.log("Server started. ")
+
 //:COMMENT:GOVIN:2020-02-20:Will contain the connected users
 var users = {};
 var server_name = "Server";
@@ -121,12 +123,13 @@ function leave(connection, data){
   console.log(connection.username+" is disconnecting from "+data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
   var conn = users[data.to];
-  conn.otherName = null;
 
   //:COMMENT:GOVIN:2020-02-20:Notify other user to close the peerconnection on his side
   //:TODO:GOVIN:2020-02-20:Manage many users
 
   if(conn != null) {
+    conn.otherName = null;
+
     var message = {
       type: "leave",
       from: connection.username,
@@ -269,6 +272,7 @@ wss.on('connection', function(connection) {
     }
 
   });
+          //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:GLITCH:GOVIN:2020-02-20:type might be ambiguous or inadequate
   var message = {
