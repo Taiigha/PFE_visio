@@ -1,4 +1,3 @@
-console.log("Coucou");
 var tracks = [];
 
 var conf = null;//{iceServers: [
@@ -105,15 +104,27 @@ function hangUp(){
   document.getElementById('hangUpButton').disabled = true;
   //$("#hangUpButton").prop("disabled", true);
 
-  local.close();
-  local = null;
+  if(local != null){
+    trackExecution("HangUp: local is null. ");
+  }else{
+    local.close();
+    local = null;
+  }
 
-  remote.close();
-  remote = null;
+
+
+  if(remote == null){
+    trackExecution("HangUp: remote is null. ");
+  }else{
+    remote.close();
+    remote = null;
+  }
+
 
   stopStreamedVideo(document.getElementById('sendVideo'));
   stopStreamedVideo(document.getElementById('receiveVideo'));
 
+  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed with the RTCPeerConnection
   dataChannel1 = null;
   dataChannel2 = null;
 
@@ -152,7 +163,7 @@ function connectToSignalingServer(){
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
-  var ws = new WebSocket("ws://"+address+":"+port)
+  var ws = new WebSocket("wss://"+address+":"+port)
 
   ws.onmessage = function (evt) {
     trackExecution("[Before Processing] Message received = " + evt.data);
@@ -385,11 +396,15 @@ function stopStreamedVideo(videoElem) {
   }
 
   const stream = videoElem.srcObject;
-  const tracks = stream.getTracks();
+  if(stream == null){
+    trackExecution("stopStreamedVideo: no stream assigned to component. ");
+  }else{
+    const tracks = stream.getTracks();
+    tracks.forEach(function(track) {
+      track.stop();
+    });
+  }
 
-  tracks.forEach(function(track) {
-    track.stop();
-  });
   videoElem.srcObject = null;
 }
 
