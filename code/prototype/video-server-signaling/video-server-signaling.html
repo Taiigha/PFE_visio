@@ -37,8 +37,19 @@
 			<button id="callButton" onclick="call()">Appeler</button>
 			<button id="hangUpButton" disabled onclick="wantToHangUp()">Raccrocher</button>
 		</div>
+		</br>
 
-
+		<div id="configuration">
+			<label for="username">width : </label>
+			<input type="text" name="width" id="width" value="" required="">
+			<label for="username">height : </label>
+			<input type="text" name="height" id="height" value="" required="">
+			<label for="username">frameRate max : </label>
+			<input type="text" name="maxframeRate" id="maxframeRate" value="" required="">
+			<label for="username">frameRate min : </label>
+			<input type="text" name="minframeRate" id="minframeRate" value="" required="">
+		</div>
+	</br>
 		<div class="text-info" id="chatbox" style="height:350px; overflow:auto; border: 2px solid #dedede;">
 	    <p> This is a chat box. </p>
 	  </div>

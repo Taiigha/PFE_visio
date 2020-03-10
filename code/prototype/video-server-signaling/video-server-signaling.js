@@ -457,7 +457,18 @@ function setUpDataChannel(dataChannel, username){
 
 function createOffer(isAudioAvailable, isVideoAvailable) {
   trackExecution('CALL : createOffer');
-  navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
+
+  if(isVideoAvailable){
+    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable , video: isVideoAvailable }).then(function(stream) {
+  // navigator.mediaDevices.getUserMedia({
+  //   audio: {
+  //     sampleSize: 16
+  //   }
+  // }).then(function(stream) {
+
     //Retrieve tracks
     tracks =  stream.getTracks();
     for (const track of stream.getTracks()) {
@@ -498,7 +509,16 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
   initPeers();
   var offer = currentOffer;
 
+  if(isVideoAvailable){
+    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+  }
+
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
+  // navigator.mediaDevices.getUserMedia({
+  //   audio: {
+  //     sampleSize: 16
+  //   }
+  // }).then(function(stream) {
     //Retrieve tracks
 
     tracks =  stream.getTracks();
