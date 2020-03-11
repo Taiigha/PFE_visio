@@ -163,7 +163,7 @@ function connectToSignalingServer(){
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
-  var ws = new WebSocket("wss://"+address+":"+port)
+  var ws = new WebSocket("ws://"+address+":"+port)
 
   ws.onmessage = function (evt) {
     trackExecution("[Before Processing] Message received = " + evt.data);
