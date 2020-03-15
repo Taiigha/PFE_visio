@@ -230,6 +230,13 @@ wss.on('connection', function(connection) {
         saveTrace(connection, data);
       break;
 
+      case "refuse":
+        var message = {
+                      type: "refuse"
+                    };
+        sendTo(connection, message);
+        break;
+
       default:
         var message = {
                         type: "error",

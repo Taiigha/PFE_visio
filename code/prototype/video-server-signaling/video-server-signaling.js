@@ -186,7 +186,15 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentOffer = data.offer;
         other_username = data.from;
-        testDevices(receivedOffer);
+        if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?"))
+          testDevices(receivedOffer);
+        else {
+          var message = {
+            type:"refuse",
+            to:data.from
+          }
+          sendMessageToSignalingServer(message);
+        }
         break;
 
       case "answer":
@@ -223,10 +231,13 @@ function createConnectionToSignalingServer(address, port, username){
         hangUp();
         break;
 
+      case "refuse":
+        window.alert("Votre correspondant a refusé l'appel");
+        break;
 
       default:
         trackExecution("Default on message :");
-        trackExecutiong(data);
+        trackExecution(data);
         break;
     }
   };
