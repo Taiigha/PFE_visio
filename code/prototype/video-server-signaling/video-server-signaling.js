@@ -201,11 +201,19 @@ function createConnectionToSignalingServer(address, port, username){
         trackExecution("Offer : ");
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Better user management required
-        currentOffer = data.offer;
         console.log("Received offer from "+data.from);
-
-        recipients.push(data.from.split("@")[1]);
-        testDevices(receivedOffer);
+        if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
+        currentOffer = data.offer;
+            recipients.push(data.from.split("@")[1]);
+            testDevices(receivedOffer);
+        }
+        else {
+          var message = {
+            type:"refuse",
+            to:data.from
+          }
+          sendMessageToSignalingServer(message);
+        }
         break;
 
       case "answer":
@@ -245,10 +253,13 @@ function createConnectionToSignalingServer(address, port, username){
         hangUp();
         break;
 
+      case "refuse":
+        window.alert("Votre correspondant a refusé l'appel");
+        break;
 
       default:
         trackExecution("Default on message :");
-        trackExecutiong(data);
+        trackExecution(data);
         break;
     }
   };
