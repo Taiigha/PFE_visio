@@ -204,8 +204,9 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         console.log("Received offer from "+data.from);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
-        currentOffer = data.offer;
-        other_username = data.from;
+          currentOffer = data.offer;
+          other_username = data.from;
+        }
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")) {
           recipients.push(data.from.split("@")[1]);
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
