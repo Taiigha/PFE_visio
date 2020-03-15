@@ -23,7 +23,7 @@ var dataChannel2 = null;
 
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
-var other_username = "You";
+var recipients = [];
 var my_username = "Me";
 
 
@@ -61,17 +61,27 @@ document.onload = function(){
 
 
 function wantToHangUp(){
-  var message = {
-    type: "leave",
-    from: my_username,
-    to: other_username
-  };
-  sendMessageToSignalingServer(message);
+  trackExecution('CALL : wantToHangUp');
+  console.log(recipients);
+  recipients.forEach(user => {
+    var message = {
+      type: "leave",
+      from: my_username,
+      to: user
+    };
+    console.log(message);
+    console.log(message);
+    sendMessageToSignalingServer(message);
+  });
+
+
+
+
 
   message = {
     type: "logs",
     from: my_username,
-    to: other_username,
+    to: recipients,
     logs: jsonExec
   };
   sendMessageToSignalingServer(message);
@@ -135,31 +145,38 @@ function connectToSignalingServer(){
 
   trackExecution('CALL : connectToSignalingServer');
   //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
-  if(connSignalingServer != null){
-    trackExecution("Already connected to a signaling server. ");
+
+  //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
+  if(connSignalingServer != null && connSignalingServer.readyState != 3){
+
+    if(connSignalingServer.readyState == 1)
+      trackExecution("Already connected to a signaling server. ");
     return;
   }
   var address = document.getElementById("url").value;
   var port = document.getElementById("port").value;
   var username = document.getElementById("username").value;
   //Regex match
-  if(!(address == null || address == "") && !(port == null || port == "") && !(username == null || username == "")
-  ){
+  if(!(address == null || address == "") && !(port == null || port == ""))
+  {
     connSignalingServer = createConnectionToSignalingServer(address, port, username);
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
-      var message = {
-        type: "login",
-        username: username
-      };
-
-      sendMessageToSignalingServer(message);
+      loginSignalingServer(username);
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
   }
 }
 
+function loginSignalingServer(username){
+  var message = {
+    type: "login",
+    username: username
+  };
+
+  sendMessageToSignalingServer(message);
+}
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
@@ -183,9 +200,11 @@ function createConnectionToSignalingServer(address, port, username){
       case "offer":
         trackExecution("Offer : ");
         //console.log(data);
-        //:GLITCH:GOVIN:2020-02-20:Awful to change
+        //:GLITCH:GOVIN:2020-02-20:Better user management required
         currentOffer = data.offer;
-        other_username = data.from;
+        console.log("Received offer from "+data.from);
+
+        recipients.push(data.from.split("@")[1]);
         testDevices(receivedOffer);
         break;
 
@@ -194,6 +213,7 @@ function createConnectionToSignalingServer(address, port, username){
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
+        console.log("Received answer from "+data.from);
         receivedAnswer(currentAnswer);
         break;
 
@@ -210,9 +230,11 @@ function createConnectionToSignalingServer(address, port, username){
       //  console.log(data);
         //:GLITCH:GOVIN:2020-02-20:To change
         if(data.success){
-          if(data.to == other_username)
-            other_username = my_username;
-          my_username = data.to;
+          trackExecution("Login: Success when login. ");
+        }else{
+          trackExecution("Login: Error while trying to login. ");
+          connSignalingServer.close();
+          connSignalingServer == null;
         }
 
         break;
@@ -251,7 +273,7 @@ function sendMessageToSignalingServer(message){
 
 }
 
-function sendOffer(offer){
+function sendOffer(offer, recipient){
   trackExecution('CALL : sendOffer');
   if(offer == null){
     trackExecution("Offer is null while trying to send it. ");
@@ -261,13 +283,14 @@ function sendOffer(offer){
   trackExecution("Sending offer through signaling server... ");
   var message = {
     type:"offer",
-    to:other_username,
+    to:recipient,
     offer: offer
   }
   sendMessageToSignalingServer(message);
+  recipients.push(recipient);
 }
 
-function sendAnswer(answer){
+function sendAnswer(answer, recipient){
   trackExecution('CALL : sendAnswer');
   if(answer == null){
     trackExecution("Answer is null while trying to send it. ");
@@ -276,7 +299,7 @@ function sendAnswer(answer){
   trackExecution("Sending answer through signaling server... ");
   var message = {
     type:"answer",
-    to:other_username,
+    to:recipient,
     answer: answer
   }
   sendMessageToSignalingServer(message);
@@ -299,7 +322,12 @@ function initLocalEvent(){
       //console.log(JSON.stringify(local.localDescription));
       currentOffer = JSON.stringify(local.localDescription);
 
-      sendOffer(currentOffer);
+      var recipient = document.getElementById("recipient").value;
+      if(recipient == null){
+        console.log("createOffer[local.onicecandidate]: recipient is null. ");
+        return;
+      }
+      sendOffer(currentOffer, recipient);
     }
   };
 
@@ -357,7 +385,8 @@ function initRemoteEvent(){
       console.log("Answer done");
       //console.log(JSON.stringify(remote.localDescription));
       currentAnswer = JSON.stringify(remote.localDescription);
-      sendAnswer(currentAnswer);
+      //:TODO:GOVIN:2020-03-12:Manage many users
+      sendAnswer(currentAnswer, recipients[0]);
     }
   };
 
@@ -590,7 +619,14 @@ function trackExecution(data)
     {
       //:TODO:ROUX:2020-02-25:add some information about performance
     }
-    console.log(data)
+    console.log(getTimestamp()+"  "+data)
     jsonExec = jsonExec + '\n' + data
   }
+}
+function getTimestamp(){
+  var timestamp = Date.now();
+  var date = new Date(timestamp);
+  var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
+  + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
+  return timestamp;
 }

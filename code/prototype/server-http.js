@@ -16,80 +16,204 @@ wscat -c localhost:9090
 * Command "list" has been added for testing purpose showing the list of connected users
 
 */
+const fs = require('fs');
 
-var WebSocketServer = require('ws').Server;
+const WebSocketServer = require('ws').Server;
 
 //:COMMENT:GOVIN:2020-02-20:Creating the server on the 9090 port
-var wss = new WebSocketServer({port: 9090});
+var wss = new WebSocketServer({port: 9091});
+const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+const ipV4PrefixedRegex = /^::ffff:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+
+const IPv6FamilyName = 'IPv6';
+const IPv4FamilyName = 'IPv4';
+
+const IPv4Prefix = "::ffff:";
+
+const localhostIpAddress = "127.0.0.1";
 
 console.log("Server started. ")
 
 //:COMMENT:GOVIN:2020-02-20:Will contain the connected users
 var users = {};
-var server_name = "Server";
-
+var server_name = "Server Signaling";
+console.log(getTimestamp());
+//:DEBUG:GOVIN:2020-03-12:COMMENTARY
+function displayUsers() {
+  console.log("###");
+  console.log(getUserList());
+}
+setInterval(displayUsers, 20*1000);
 
 function saveTrace(connection, data){
   console.log("Save trace "+connection.username);
-  const fs = require('fs')
-  var donnees = data.logs
-  fs.writeFileSync('logs', donnees)
+  var donnees = data.logs;
+  fs.writeFileSync('logs', donnees);
 }
 
+function extractIPv4FromIPv6(ipAddress){
+  if(ipAddress == null){
+    console.log("extractIPv4FromIPv6: ipAddress is null. ");
+    return;
+  }
+
+  return ipAddress.substring(IPv4Prefix.length);
+}
+function getIPAddress(address_struct){
+  //:COMMENT:GOVIN:2020-03-12: Argument example { address: '::ffff:192.168.0.16', family: 'IPv6', port: 9090 }
+  if(address_struct == null){
+    console.log("getIPAddress: address is null. ");
+    return;
+  }
+
+  if(address_struct.family === IPv4FamilyName){
+    return address_struct.address;
+  }
+  if(address_struct.family === IPv6FamilyName){
+
+    if(address_struct.address.match(ipV4PrefixedRegex)){
+      return extractIPv4FromIPv6(address_struct.address);
+    }
+
+    return address_struct.address;
+  }
+}
+
+function getUser(username){
+  if(username == null){
+    console.log("getUser: username is null. ");
+    return;
+  }
+  if(ipV4Regex.test(username) || ipV6Regex.test(username)){
+    return users[username];
+  }else{
+    for(user in users){
+      if(user.username === username){
+        return user;
+      }
+    }
+  }
+}
+const getMethods = (obj) => {
+  let properties = new Set()
+  let currentObj = obj
+  do {
+    Object.getOwnPropertyNames(currentObj).map(item => properties.add(item))
+  } while ((currentObj = Object.getPrototypeOf(currentObj)))
+  return [...properties.keys()].filter(item => typeof obj[item] === 'function')
+}
 
 function login(connection, data){
-  console.log("User "+data.username+" trying to log... ");
+//:GLITCH:GOVIN:2020-03-12:MAUVAISE ADRESSE; MAUVAISE SOCKET
 
+
+  var address = {
+    address: connection._socket.remoteAddress,
+    family: connection._socket.remoteFamily,
+    port: connection._socket.remotePort
+  };
+
+  var ipAddress = getIPAddress(address);
+
+  console.log(getTimestamp()+" [Login-1] User "+ipAddress+" trying to log... ");
 
   //:COMMENT:GOVIN:2020-02-20:Refuse connection if username already exists.
-  if(users[data.username]) {
+  if(users[ipAddress]) {
     var message = {
                   type: "login",
                   success: false,
                   from: server_name,
-                  comment:"Login already used. "
+                  comment:"You are already connected. "
                 };
     sendTo(connection, message);
-      console.log("User "+data.username+" has failed to log, username already used. ");
+    console.log(getTimestamp()+" [Login-2] User "+data.username+" has failed to log, user already connected. ");
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
   } else {
 
-    //:COMMENT:GOVIN:2020-02-20:Saving the connection of the user in the server memory
-    users[data.username] = connection;
-    connection.username = data.username;
+    //:GLITCH:GOVIN:2020-03-15:If the client is the server and uses localhost to connect to
+    //:GLITCH:GOVIN:2020-03-15:the server, he'll be registred with the localhost so we need to
+    //:GLITCH:GOVIN:2020-03-15:retrieve the IP address from the server
+    if(ipAddress === localhostIpAddress){
 
+    }
+
+    //:COMMENT:GOVIN:2020-02-20:Saving the connection of the user in the server memory
+    users[ipAddress] = connection;
+    if(data.username == null){
+      connection.username = ipAddress;
+    }else{
+      connection.username = data.username;
+    }
+    connection.ipAddress = ipAddress;
     var message = {
       type: "login",
       success: true,
       from: server_name,
-      to: data.username,
+      to: data.username+"@"+connection.ipAddress,
       comment: "Welcome "+connection.username+" !"
     };
     sendTo(connection, message);
-      console.log("User "+data.username+" is logged. ");
+    console.log(getTimestamp()+" [Login-3] User "+data.username+" is logged. ");
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
 }
-
-
+function isIpAddress(ip){
+  if(ip == null)
+    return false;
+  return ipRegex.test(ip);
+}
+function findConnection(recipient){
+  if(recipient == null){
+    console.log("findConnection: recipient is null. ");
+    return null;
+  }
+  if(isIpAddress(recipient)){
+    return users[recipient];
+  }else{
+    for(user in users) {
+      if(user.username == recipient){
+        return user;
+      }
+    }
+  }
+  return null;
+}
+function sendErrorMessage(connection, errorType, errorMessage){
+  var message = {
+    type: "error",
+    errorType: errorType,
+    errorMessage: errorMessage
+  }
+  sendTo(connection, message);
+}
 function sendOffer(connection, data){
 
-  console.log("Sending offer from "+connection.username+" to: "+data.to);
+  if(data.to == null){
+    console.log(getTimestamp()+" [Offer-0] Error: "+connection.username+"@"+connection.ipAddress+"trying to send offer to unknown. ");
+    sendErrorMessage(connection, "offer", "Null recipient. ");
+    return;
+  }
+  console.log(getTimestamp()+" [Offer-1] Sending offer from "+connection.username+" to: "+data.to);
 
   var conn = users[data.to];
 
   if(conn != null) {
     //:TODO:GOVIN:2020-02-20:Manage many connections
-    //:COMMENT:GOVIN:2020-02-20:COMMENTARY
-    connection.otherName = data.to;
+    //:COMMENT:GOVIN:2020-02-20:We assume that data.to is an IPAdress
+    if(connection.otherAddresses == null){
+      connection.otherAddresses = [];
+    }
+    connection.otherAddresses.push(data.to);
 
-    sendTo(conn, {
+    var message = {
       type: "offer",
       offer: data.offer,
-      from: connection.username,
-      to: data.to
-    });
+      from: connection.username+"@"+connection.ipAddress,
+      to: data.to+"@"+conn.ipAddress
+    }
+    sendTo(conn, message);
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
@@ -98,18 +222,23 @@ function sendOffer(connection, data){
 }
 
 function answer(connection, data){
-  console.log("Sending answer from "+connection.username+" to: "+ data.to);
+  console.log(getTimestamp()+" [Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
 
   if(conn != null) {
-    connection.otherName = data.to;
+
+    if(connection.otherAddresses == null){
+      connection.otherAddresses = [];
+    }
+    connection.otherAddresses.push(data.to);
+
     var message = {
       type: "answer",
-      from: connection.username,
-      to: data.to,
+      from: connection.username+"@"+connection.ipAddress,
+      to: data.to+"@"+conn.ipAddress,
       answer: data.answer
     }
     sendTo(conn, message);
@@ -119,47 +248,77 @@ function answer(connection, data){
   }
 }
 
+function removeElementInArray(array, ipAddress){
+  var index = array.indexOf(ipAddress);
+  if (index > -1) {
+    array.splice(index, 1);
+  }
+  return array
+}
+
 function leave(connection, data){
-  console.log(connection.username+" is disconnecting from "+data.to);
+  console.log(getTimestamp()+" [Leave-1] "+connection.username+" is disconnecting from "+data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
-  var conn = users[data.to];
 
-  //:COMMENT:GOVIN:2020-02-20:Notify other user to close the peerconnection on his side
-  //:TODO:GOVIN:2020-02-20:Manage many users
+  if(data.to != null){
+      var conn = users[data.to];
+      //:COMMENT:GOVIN:2020-02-20:Notify other user to close the peerconnection on his side
+      //:TODO:GOVIN:2020-02-20:Manage many users
 
-  if(conn != null) {
-    conn.otherName = null;
+      if(conn != null) {
 
-    var message = {
-      type: "leave",
-      from: connection.username,
-      to: data.to
-    };
-    sendTo(conn, message);
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
+        conn.otherAddresses = removeElementInArray(conn.otherAddresses, connection.ipAddress);
+
+        var message = {
+          type: "leave",
+          from: connection.username+"@"+connection.ipAddress,
+          to: data.to+"@"+conn.ipAddress
+        };
+        sendTo(conn, message);
+        //:TODO:GOVIN:2020-02-20:Add the message in a log file
+        console.log(getTimestamp()+" [Leave-2] Sending leaving message to "+data.to);
+      }else{
+        console.log(getTimestamp()+" [Leave-4] Error: no connection found for remote "+data.to);
+      }
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+    console.log(getTimestamp()+" [Leave-3] Error: no connection found for recipient "+data.to);
   }
 }
 
 function sendCandidateTo(connection, data){
-  console.log(connection.username+" is sending candidate to : "+data.to);
+  if(data.to == null){
+    console.log(getTimestamp()+" [Candidate-0]"+connection.username+" trying to send candidate to null. ");
+    sendErrorMessage(connection, "candidate", "Null recipient. ");
+    return;
+  }
+  console.log(getTimestamp()+" [Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
   var conn = users[data.to];
 
   if(conn != null) {
     var message = {
       type: "candidate",
-      from: connection.username,
-      to: data.to,
+      from: connection.username+"@"+connection.ipAddress,
+      to: data.to+"@"+conn.ipAddress,
       candidate: data.candidate
     };
     sendTo(conn, message);
+    console.log(getTimestamp()+" [Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
       console.log("Error for : ["+connection.username+ " is sending candidate to : "+data.to+"]");
   }
+}
+
+function getUserList(){
+  user_names = [];
+  Object.entries(users).forEach(([key, value]) => {
+    user_names.push(value.username+"@"+key);
+  });
+
+  return user_names;
 }
 
 wss.on('connection', function(connection) {
@@ -210,11 +369,7 @@ wss.on('connection', function(connection) {
       //:GLITCH:GOVIN:2020-02-20:Test code to understand, might be a dead code
       case "list":
       console.log("List request from "+connection.username);
-      user_names = [];
-      Object.entries(users).forEach(([key, value]) => {
-        user_names.push(value.username);
-      });
-
+      user_names = getUserList();
       console.log(user_names);
       //notify the other user so he can disconnect his peer connection
       if(connection != null) {
@@ -243,32 +398,38 @@ wss.on('connection', function(connection) {
 
   //:COMMENT:GOVIN:2020-02-20:Onclose event for the connection.
   connection.on("close", function() {
+    var ipAddress = connection.ipAddress;
+    console.log(getTimestamp()+" [Close-Connection-Event-1] Close connection from "+connection.username+"@"+ipAddress);
 
-    if(connection.username) {
-      delete users[connection.username];
-      //:TODO:GOVIN:2020-02-20:Add the message in a log file
+    if(users[ipAddress]) {
 
-      if(connection.otherName) {
-        console.log("Disconnecting from "+connection.otherName);
-        //:TODO:GOVIN:2020-02-20:Add the message in a log file
-
-        var conn = users[connection.otherName];
-        //:TODO:GOVIN:2020-02-20:Manage many users
-        if(conn != null) {
-          conn.otherName = null;
-          var message = {
-                        type: "leave",
-                        from: connection.username,
-                        to: conn.username
-                      };
-          sendTo(conn, message);
+      if(connection.otherAddresses) {
+        for(user in connection.otherAddresses){
+          console.log("####");
+          console.log(user);
+          var conn = users[user];
           //:TODO:GOVIN:2020-02-20:Add the message in a log file
+          //:TODO:GOVIN:2020-02-20:Manage many users
+          if(conn != null) {
+            console.log(getTimestamp()+" [Close-Connection-Event-2] "+connection.username+"@"+ipAddress+" disconnecting from "+conn.username+"@"+user);
+            conn.otherAddresses = removeElementInArray(conn.otherAddresses, ipAddress);
+            var message = {
+                          type: "leave",
+                          from: connection.username+"@"+connection.ipAddress,
+                          to: data.to+"@"+conn.ipAddress
+                        };
+            sendTo(conn, message);
+            //:TODO:GOVIN:2020-02-20:Add the message in a log file
+            console.log(getTimestamp()+" [Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
+          }
         }
       }
-        console.log(connection.username+" user has disconnected. ");
+
+        //:TODO:GOVIN:2020-02-20:Add the message in a log file
+        delete users[ipAddress];
     }else{
       //:TODO:GOVIN:2020-02-20:Add the message in a log file "anonymous user disconnected"
-      console.log("Anonymous user has disconnected. ");
+      console.log(getTimestamp()+" [Close-Connection-Event-5] Anonymous user has disconnected. ");
     }
 
   });
@@ -284,5 +445,21 @@ wss.on('connection', function(connection) {
 });
 
 function sendTo(connection, message) {
+  if(connection == null){
+    console.log("sendTo: Connection is null. ");
+    return;
+  }
+  if(message == null){
+    console.log("sendTo: message is null. ");
+    return;
+  }
   connection.send(JSON.stringify(message));
+}
+
+function getTimestamp(){
+  var timestamp = Date.now();
+  var date = new Date(timestamp);
+  var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
+  + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
+  return timestamp;
 }
