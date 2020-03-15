@@ -184,6 +184,7 @@ function findConnection(recipient){
   }
   return null;
 }
+
 function sendErrorMessage(connection, errorType, errorMessage){
   var message = {
     type: "error",
@@ -192,6 +193,7 @@ function sendErrorMessage(connection, errorType, errorMessage){
   }
   sendTo(connection, message);
 }
+
 function sendOffer(connection, data){
 
   if(data.to == null){
@@ -215,8 +217,7 @@ function sendOffer(connection, data){
       type: "offer",
       offer: data.offer,
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
-      videoCall : data.videoCall
+      to: data.to+"@"+conn.ipAddress
     }
     sendTo(conn, message);
 
@@ -254,6 +255,10 @@ function answer(connection, data){
 }
 
 function removeElementInArray(array, ipAddress){
+  if(array == null){
+    console.log("removeElementInArray: array is null. ");
+    return;
+  }
   var index = array.indexOf(ipAddress);
   if (index > -1) {
     array.splice(index, 1);
