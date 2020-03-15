@@ -100,7 +100,7 @@ function initPeers(){
   initRemoteEvent();
 }
 
-function call(audio, videoNeeded){
+function call(videoNeeded){
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
