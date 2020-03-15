@@ -34,19 +34,20 @@
 		</div>
 
 		<div id="buttons">
-			<button id="callButton" onclick="call()">Appeler</button>
+      <button id="audioCallButton" onclick="call(false)">Appel audio</button>
+      <button id="videoCallbutton" onclick="call(true)">Appel vidéo</button>
 			<button id="hangUpButton" disabled onclick="wantToHangUp()">Raccrocher</button>
 		</div>
 		</br>
 
 		<div id="configuration">
-			<label for="username">width : </label>
+			<label for="username">Largeur : </label>
 			<input type="text" name="width" id="width" value="1920" required="">
-			<label for="username">height : </label>
+			<label for="username">Hauteur : </label>
 			<input type="text" name="height" id="height" value="1080" required="">
-			<label for="username">frameRate max : </label>
+			<label for="username">Images par seconde max : </label>
 			<input type="text" name="maxframeRate" id="maxframeRate" value="60" required="">
-			<label for="username">frameRate min : </label>
+			<label for="username">Images par seconde min : </label>
 			<input type="text" name="minframeRate" id="minframeRate" value="20" required="">
 		</div>
 	</br>

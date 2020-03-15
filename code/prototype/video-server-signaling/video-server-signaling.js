@@ -31,7 +31,7 @@ var currentAnswer = null, currentOffer = null;
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
 //:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 
-
+var isAVideoCall = false;
 
 
 /*$(document).ready(e => {
@@ -90,10 +90,11 @@ function initPeers(){
   initRemoteEvent();
 }
 
-function call(){
+function call(audio, videoNeeded){
   trackExecution("Call function. ");
   initPeers();
-  testDevices(createOffer);
+  isAVideoCall = videoNeeded;
+  testDevices(createOffer, videoNeeded);
 }
 
 function hangUp(){
@@ -187,7 +188,7 @@ function createConnectionToSignalingServer(address, port, username){
         currentOffer = data.offer;
         other_username = data.from;
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?"))
-          testDevices(receivedOffer);
+          testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         else {
           var message = {
             type:"refuse",
@@ -273,7 +274,8 @@ function sendOffer(offer){
   var message = {
     type:"offer",
     to:other_username,
-    offer: offer
+    offer: offer,
+    videoCall: isAVideoCall
   }
   sendMessageToSignalingServer(message);
 }
@@ -447,7 +449,7 @@ function showMessage(data, username) {
   document.getElementById("chatbox").appendChild(log);
 }
 
-function testDevices(callback) {
+function testDevices(callback, videoNeeded) {
   trackExecution('CALL : testDevices');
   var isAudioAvailable = false, isVideoAvailable = false;
   //Test if audio and video devices are availables
@@ -455,7 +457,7 @@ function testDevices(callback) {
     devices.forEach(function(device) {
       if(device.kind === "audioinput")
       isAudioAvailable = true;
-      if(device.kind === "videoinput")
+      if(device.kind === "videoinput" && videoNeeded)
       isVideoAvailable = true;
     });
     callback(isAudioAvailable, isVideoAvailable);
@@ -500,7 +502,6 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     for (const track of stream.getTracks()) {
       local.addTrack(track, stream);
     }
-    //local.addTrack(tracks); //TODO:JCAMY:Find if it is necessary to do differently with video balises : is there more than 1 tracks ? Then how to detect which one we want to use.
 
     //::GOVIN:2020-02-20:Binding stream with sendVideo element
     var video = document.getElementById('sendVideo');

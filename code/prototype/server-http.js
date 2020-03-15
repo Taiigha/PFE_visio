@@ -88,7 +88,8 @@ function sendOffer(connection, data){
       type: "offer",
       offer: data.offer,
       from: connection.username,
-      to: data.to
+      to: data.to,
+      videoCall : data.videoCall
     });
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
