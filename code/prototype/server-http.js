@@ -399,7 +399,7 @@ wss.on('connection', function(connection) {
         var message = {
                       type: "refuse"
                     };
-        sendTo(connection, message);
+        sendTo(users[data.to], message);
         break;
 
       default:
