@@ -1,10 +1,11 @@
+
 var tracks = [];
 
-var conf = null;//{iceServers: [
-  //{urls: "stun:stun.l.google.com:19302"}/*,
+var conf ={iceServers: [
+  {urls: "stun:stun.l.google.com:19302"}/*,
   //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-//]
-//};
+]
+};
 
 var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
@@ -61,6 +62,8 @@ document.onload = function(){
 
 
 function wantToHangUp(){
+  document.getElementById("call").style.display = "block";
+  document.getElementById("inCommunication").style.display = "none";
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
   recipients.forEach(user => {
@@ -101,6 +104,8 @@ function initPeers(){
 }
 
 function call(videoNeeded){
+  document.getElementById("inCommunication").style.display = "block";
+  document.getElementById("call").style.display = "none";
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
@@ -145,6 +150,9 @@ function hangUp(){
 function connectToSignalingServer(){
 
   trackExecution('CALL : connectToSignalingServer');
+  document.getElementById("call").style.display = "block";
+  document.getElementById("connectToSignalingServer").style.display = "none";
+
   //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
   //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
@@ -204,6 +212,8 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         console.log("Received offer from "+data.from);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
+          document.getElementById("call").style.display = "none";
+          document.getElementById("inCommunication").style.display = "block";
           currentOffer = data.offer;
           other_username = data.from;
           recipients.push(data.from.split("@")[1]);

@@ -7,7 +7,7 @@ div#send {
 div#receive {
 	position : absolute;
 
-	
+
 	text-align: left;
 	width : 65%;
 }
@@ -18,4 +18,16 @@ video {
   --width: 100%;
   width: var(--width);
   height: calc(var(--width) * 1);
+}
+
+h1 {
+	 text-align: center;
+}
+
+div#call {
+	display:none
+}
+
+div#inCommunication {
+	display:none
 }
