@@ -206,6 +206,7 @@ function createConnectionToSignalingServer(address, port, username){
   var ws = new WebSocket("ws://"+address+":"+port)
 
   ws.onmessage = function (evt) {
+    console.log("refuse")
     trackExecution("[Before Processing] Message received = " + evt.data);
     var data;
     //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
@@ -234,9 +235,10 @@ function createConnectionToSignalingServer(address, port, username){
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
+          recipients.push(data.from.split("@")[1])
           var message = {
             type:"refuse",
-            to:data.from
+            to:recipients
           }
           sendMessageToSignalingServer(message);
         }
@@ -280,6 +282,7 @@ function createConnectionToSignalingServer(address, port, username){
         break;
 
       case "refuse":
+        console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
         break;
 
