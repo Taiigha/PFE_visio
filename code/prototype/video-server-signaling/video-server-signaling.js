@@ -154,8 +154,6 @@ function hangUp(){
 function connectToSignalingServer(){
 
   trackExecution('CALL : connectToSignalingServer');
-  document.getElementById("call").style.display = "block";
-  document.getElementById("connectToSignalingServer").style.display = "none";
 
   //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
@@ -176,6 +174,9 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
+      document.getElementById("alert").style.display = "none";
+      document.getElementById("call").style.display = "block";
+      document.getElementById("connectToSignalingServer").style.display = "none";
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
