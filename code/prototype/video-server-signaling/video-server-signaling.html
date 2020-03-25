@@ -64,7 +64,7 @@
             </div>
 
 						<div id="call">
-
+              <b-alert style="display: none" id="endCon" show variant="info" >Fin de communcation</b-alert>
 	            <div id="configuration">
 								<b-container fluid>
 								<b-row class="my-1">
@@ -150,14 +150,6 @@
     <script>
         window.app = new Vue({
             el: '#app',
-            data: {
-                name: ''
-            },
-            computed: {
-                showAlert() {
-                    return this.name.length > 4 ? true : false
-                }
-            }
         })
     </script>
     <script type="text/javascript" src="./adapter.js"></script>

@@ -35,6 +35,7 @@ var currentAnswer = null, currentOffer = null;
 var isAVideoCall = false;
 
 
+
 /*$(document).ready(e => {
   $("#username").val("Me");
   $("#url").val("192.168.0.13");
@@ -54,6 +55,9 @@ var isAVideoCall = false;
     hangUp();
   });
 });*/
+
+
+
 document.onload = function(){
   trackExecution("finish");
   document.getElementById("username").value = "Me";
@@ -104,6 +108,7 @@ function initPeers(){
 }
 
 function call(videoNeeded){
+  document.getElementById("endCon").style.display = "none";
   document.getElementById("inCommunication").style.display = "block";
   document.getElementById("call").style.display = "none";
   trackExecution("Call function. ");
@@ -118,6 +123,9 @@ function hangUp(){
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
+  document.getElementById("inCommunication").style.display = "none";
+  document.getElementById("call").style.display = "block";
+  document.getElementById("endCon").style.display = "block";
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
