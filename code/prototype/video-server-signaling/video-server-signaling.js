@@ -71,6 +71,7 @@ function error(err, msg) {
 
 function wantToHangUp(){
   document.getElementById("call").style.display = "block";
+  document.getElementById("alert").style.display = "none";
   document.getElementById("inCommunication").style.display = "none";
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
@@ -115,6 +116,7 @@ function call(videoNeeded){
   document.getElementById("endCon").style.display = "none";
   document.getElementById("inCommunication").style.display = "block";
   document.getElementById("call").style.display = "none";
+  document.getElementById("alert").style.display = "none";
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
@@ -130,6 +132,7 @@ function hangUp(){
   document.getElementById("inCommunication").style.display = "none";
   document.getElementById("call").style.display = "block";
   document.getElementById("endCon").style.display = "block";
+  document.getElementById("alert").style.display = "none";
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
@@ -225,18 +228,20 @@ function createConnectionToSignalingServer(address, port, username){
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         console.log("Received offer from "+data.from);
+
+        recipients.push(data.from.split("@")[1]);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
           document.getElementById("call").style.display = "none";
           document.getElementById("inCommunication").style.display = "block";
+          document.getElementById("alert").style.display = "none";
           currentOffer = data.offer;
           other_username = data.from;
-          recipients.push(data.from.split("@")[1]);
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
           var message = {
             type:"refuse",
-            to:data.from
+            to:recipients
           }
           sendMessageToSignalingServer(message);
         }
