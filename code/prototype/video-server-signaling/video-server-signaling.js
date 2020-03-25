@@ -59,7 +59,11 @@ document.onload = function(){
   document.getElementById("username").value = "Me";
 }
 
-
+function error(err, msg) {
+  trackExecution("ERR : " + err + " : " + msg);
+  document.getElementById("alert").textContent = err + " : " + msg;
+  document.getElementById("alert").style.display = "block";
+}
 
 function wantToHangUp(){
   document.getElementById("call").style.display = "block";
@@ -186,6 +190,7 @@ function loginSignalingServer(username){
 
   sendMessageToSignalingServer(message);
 }
+
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
@@ -252,9 +257,9 @@ function createConnectionToSignalingServer(address, port, username){
         if(data.success){
           trackExecution("Login: Success when login. ");
         }else{
-          trackExecution("Login: Error while trying to login. ");
           connSignalingServer.close();
           connSignalingServer == null;
+          error("Login", "Error while trying to login");
         }
 
         break;
@@ -282,6 +287,7 @@ function createConnectionToSignalingServer(address, port, username){
 
   ws.onerror = function(err){
     console.error("Error while connecting to WebSocket : ", err);
+    error("Error while connecting to WebSocket", err );
   };
 
   return ws;
@@ -291,7 +297,7 @@ function sendMessageToSignalingServer(message){
   if(connSignalingServer != null){
     connSignalingServer.send(JSON.stringify(message));
   }else{
-    trackExecution("Error : No connection to signaling server. ");
+    error("No connection to signaling server" );
   }
 
 }
@@ -503,6 +509,7 @@ function testDevices(callback, videoNeeded) {
     callback(isAudioAvailable, isVideoAvailable);
   })
   .catch(function(err) {
+    document.getElementById("alert").textContent = err.name + " : " + err.message;
     trackExecution("ERR : " + err.name + " : " + err.message);
   });
 }
@@ -560,14 +567,14 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     //Create offer
     local.createOffer().then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
-        trackExecution("ERR : " + err.name + " : " + err.message);
+        error(err.name, err.message);
       });
     }).catch(function(err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
   }).catch(function(err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
@@ -609,20 +616,20 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
-        trackExecution("ERR : " + err.name + " : " + err.message);
+        error(err.name, err.message);
       });
     }).catch(function(err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
   }).catch(function(err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
@@ -630,7 +637,7 @@ function receivedAnswer(answer){
   trackExecution('CALL : receivedAnswer');
 
   local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
