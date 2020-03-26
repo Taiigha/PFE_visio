@@ -36,7 +36,8 @@ var currentAnswer = null, currentOffer = null;
 
 var isAVideoCall = false;
 
-
+const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
 
 /*$(document).ready(e => {
   $("#username").val("Me");
@@ -113,7 +114,8 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  if (document.getElementById("recipient").value != "")
+  var address = document.getElementById("recipient").value
+  if ((address != "") && (ipV4Regex.test(address) || ipV6Regex.test(address)))
   {
     changePage("inCommunication");
     trackExecution("Call function. ");
@@ -123,7 +125,7 @@ function call(videoNeeded){
   }
   else
   {
-    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP. Veuillez renseigner une adresse IP destinataire";
+    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP ou l'adresse IP a un format incorrect";
     document.getElementById("alert").style.display = "block";
   }
 
