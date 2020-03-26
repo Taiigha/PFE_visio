@@ -75,7 +75,7 @@ function error(err, msg) {
 function wantToHangUp(){
   changePage("call");
   trackExecution('CALL : wantToHangUp');
-  console.log("recipients " + recipients);
+  console.log(recipients);
   recipients.forEach(user => {
     var message = {
       type: "leave",
@@ -138,7 +138,6 @@ function hangUp(){
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
-  recipients = [];
   changePage("call");
   //$("#hangUpButton").prop("disabled", true);
 
@@ -192,8 +191,6 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
-
-      changePage("call");
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
@@ -276,6 +273,9 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:To change
         if(data.success){
           trackExecution("Login: Success when login. ");
+          changePage("call");
+          document.getElementById("info").textContent = "Vous êtes connecté en tant que : " + data.to;
+          document.getElementById("info").style.display = "block";
         }else{
           connSignalingServer.close();
           connSignalingServer == null;
@@ -293,7 +293,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "refuse":
         console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
-        hangUp();
+        changePage("call");
         break;
 
       default:
@@ -358,106 +358,124 @@ function sendAnswer(answer, recipient){
 }
 
 var isNegotiating = false;
-function initLocalEvent(){
+function initLocalEvent() {
   if(local == null){
     trackExecution("Local RTCPeerConnection is null. ");
     return;
   }
-    local.onsignalingstatechange = (e) => {  // Workaround for Chrome: skip nested negotiations
-    isNegotiating = (local.signalingState != "stable");
-  }
-  local.onicecandidate = function(e) {
-    trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
-    //console.log(e.candidate);
-    if(e.candidate == null) {
-      trackExecution("Offer done");
-      //console.log(JSON.stringify(local.localDescription));
-      currentOffer = JSON.stringify(local.localDescription);
 
-      var recipient = document.getElementById("recipient").value;
-      if(recipient == null){
-        console.log("createOffer[local.onicecandidate]: recipient is null. ");
-        return;
+  local.onsignalingstatechange = (e) => {  // Workaround for Chrome: skip nested negotiations
+      isNegotiating = (local.signalingState != "stable");
+  }
+
+  local.onicecandidate = function(e) {
+    if(local != null) {
+      trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
+      //console.log(e.candidate);
+      if(e.candidate == null) {
+        trackExecution("Offer done");
+        //console.log(JSON.stringify(local.localDescription));
+        currentOffer = JSON.stringify(local.localDescription);
+
+        var recipient = document.getElementById("recipient").value;
+        if(recipient == null){
+          console.log("createOffer[local.onicecandidate]: recipient is null. ");
+          return;
+        }
+        sendOffer(currentOffer, recipient);
       }
-      sendOffer(currentOffer, recipient);
     }
   };
 
   local.ontrack = function(e){
-    trackExecution('EVENT : local.ontrack : ' + local.getTracks);
-    var receiveVideo = document.getElementById('receiveVideo');
-    var stream = null;
+    if(local != null) {
+      trackExecution('EVENT : local.ontrack : ' + local.getTracks);
+      var receiveVideo = document.getElementById('receiveVideo');
+      var stream = null;
 
-    if (e.streams && e.streams[0]) {
-      trackExecution(e.streams[0]);
-      trackExecution(e.streams[0].getTracks());
-      stream = e.streams[0];
-      bindVideoWithStream(receiveVideo, stream);
+      if (e.streams && e.streams[0]) {
+        trackExecution(e.streams[0]);
+        trackExecution(e.streams[0].getTracks());
+        stream = e.streams[0];
+        bindVideoWithStream(receiveVideo, stream);
+      }
     }
   };
 
   local.onconnectionstatechange = function(e) {
-    trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
-    // console.log(local.connectionState);
-    if(local.connectionState === "connected"){
-        trackExecution("Local connected");
+    if(local != null) {
+      trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
+      // console.log(local.connectionState);
+      if(local.connectionState === "connected"){
+          trackExecution("Local connected");
+      }
     }
-
   };
 
   local.oniceconnectionstatechange = function(e) {
-    trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
-    // console.log(local.iceConnectionState);
-    if(local.iceConnectionState === "connected")
-      trackExecution("Local connected (ICE)");
+    if(local != null) {
+      trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
+      // console.log(local.iceConnectionState);
+      if(local.iceConnectionState === "connected")
+        trackExecution("Local connected (ICE)");
+    }
   };
 }
 
-function initRemoteEvent(){
+function initRemoteEvent() {
   if(remote == null){
     trackExecution("Remote RTCPeerConnection is null. ");
     return;
   }
-  remote.ontrack = function(e){
-    trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
-    var receiveVideo = document.getElementById('receiveVideo');
-    //var receiveVideo = $("#receiveVideo")[0];
-    var stream = null;
 
-    if (e.streams && e.streams[0]) {
-      stream = e.streams[0];
+  remote.ontrack = function(e){
+    if(remote != null) {
+      trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
+      var receiveVideo = document.getElementById('receiveVideo');
+      //var receiveVideo = $("#receiveVideo")[0];
+      var stream = null;
+
+      if (e.streams && e.streams[0]) {
+        stream = e.streams[0];
+      }
+      bindVideoWithStream(receiveVideo, stream);
     }
-    bindVideoWithStream(receiveVideo, stream);
   };
 
   remote.onicecandidate = function(e) {
-    trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
-    //console.log(e.candidate);
-    if(e.candidate == null)  {
-      console.log("Answer done");
-      //console.log(JSON.stringify(remote.localDescription));
-      currentAnswer = JSON.stringify(remote.localDescription);
-      //:TODO:GOVIN:2020-03-12:Manage many users
-      sendAnswer(currentAnswer, recipients[0]);
+    if(remote != null){
+      trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
+      //console.log(e.candidate);
+      if(e.candidate == null)  {
+        console.log("Answer done");
+        //console.log(JSON.stringify(remote.localDescription));
+        currentAnswer = JSON.stringify(remote.localDescription);
+        //:TODO:GOVIN:2020-03-12:Manage many users
+        sendAnswer(currentAnswer, recipients[0]);
+      }
     }
   };
 
 
   remote.onconnectionstatechange = function(e) {
-    trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
-    // console.log(remote.connectionState);
-    if(remote.connectionState === "connected"){
-      trackExecution("Remote connected");
+    if(remote != null){
+      trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
+      // console.log(remote.connectionState);
+      if(remote.connectionState === "connected"){
+        trackExecution("Remote connected");
+      }
     }
-
   };
 
 
   remote.oniceconnectionstatechange = function(e) {
-    trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
-    // console.log(remote.iceConnectionState);
-    if(remote.iceConnectionState === "connected")
-      trackExecution("Remote connected (ice)");
+    if(remote != null)
+    {
+      trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
+      // console.log(remote.iceConnectionState);
+      if(remote.iceConnectionState === "connected")
+        trackExecution("Remote connected (ice)");
+    }
   };
 }
 
@@ -539,7 +557,7 @@ function testDevices(callback, videoNeeded) {
 function setUpDataChannel(dataChannel, username){
   trackExecution('CALL : setUpDataChannel');
   dataChannel.onopen = function(event) {
-    dataChannel.send(" connected to chatbox");
+    dataChannel.send(username + " connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
