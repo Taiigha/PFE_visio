@@ -27,6 +27,8 @@ var connSignalingServer = null;
 var recipients = [];
 var my_username = "Me";
 
+var username;
+var remoteusername;
 
 var currentAnswer = null, currentOffer = null;
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
@@ -70,11 +72,9 @@ function error(err, msg) {
 }
 
 function wantToHangUp(){
-  document.getElementById("call").style.display = "block";
-  document.getElementById("alert").style.display = "none";
-  document.getElementById("inCommunication").style.display = "none";
+  changePage("call");
   trackExecution('CALL : wantToHangUp');
-  console.log(recipients);
+  console.log("recipients " + recipients);
   recipients.forEach(user => {
     var message = {
       type: "leave",
@@ -113,26 +113,31 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  document.getElementById("endCon").style.display = "none";
-  document.getElementById("inCommunication").style.display = "block";
-  document.getElementById("call").style.display = "none";
-  document.getElementById("alert").style.display = "none";
-  trackExecution("Call function. ");
-  initPeers();
-  isAVideoCall = videoNeeded;
-  testDevices(createOffer, videoNeeded);
+  if (document.getElementById("recipient").value != "")
+  {
+    changePage("inCommunication");
+    trackExecution("Call function. ");
+    initPeers();
+    isAVideoCall = videoNeeded;
+    testDevices(createOffer, videoNeeded);
+  }
+  else
+  {
+    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP. Veuillez renseigner une adresse IP destinataire";
+    document.getElementById("alert").style.display = "block";
+  }
+
 }
 
 function hangUp(){
 
   //:TODO:ROUX:send a debug message to server.
+  document.getElementById("endCon").style.display = "block";
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
-  document.getElementById("inCommunication").style.display = "none";
-  document.getElementById("call").style.display = "block";
-  document.getElementById("endCon").style.display = "block";
-  document.getElementById("alert").style.display = "none";
+  recipients = [];
+  changePage("call");
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
@@ -177,7 +182,7 @@ function connectToSignalingServer(){
   }
   var address = document.getElementById("url").value;
   var port = document.getElementById("port").value;
-  var username = document.getElementById("username").value;
+  username = document.getElementById("username").value;
   //Regex match
   if(!(address == null || address == "") && !(port == null || port == ""))
   {
@@ -185,9 +190,8 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
-      document.getElementById("alert").style.display = "none";
-      document.getElementById("call").style.display = "block";
-      document.getElementById("connectToSignalingServer").style.display = "none";
+
+      changePage("call");
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
@@ -228,19 +232,16 @@ function createConnectionToSignalingServer(address, port, username){
         trackExecution("Offer : ");
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Better user management required
+        recipients = [];
+        recipients.push(data.from.split("@")[1])
         console.log("Received offer from "+data.from);
-
-        recipients.push(data.from.split("@")[1]);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
-          document.getElementById("call").style.display = "none";
-          document.getElementById("inCommunication").style.display = "block";
-          document.getElementById("alert").style.display = "none";
+          changePage("inCommunication");
           currentOffer = data.offer;
-          other_username = data.from;
+          remoteusername = data.from.split("@")[0]
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
-          recipients.push(data.from.split("@")[1])
           var message = {
             type:"refuse",
             to:recipients
@@ -255,6 +256,7 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
+        remoteusername = data.from.split("@")[0]
         receivedAnswer(currentAnswer);
         break;
 
@@ -289,6 +291,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "refuse":
         console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
+        hangUp();
         break;
 
       default:
@@ -314,7 +317,7 @@ function sendMessageToSignalingServer(message){
   if(connSignalingServer != null){
     connSignalingServer.send(JSON.stringify(message));
   }else{
-    error("No connection to signaling server" );
+    error("Connection : No connection to signaling server" );
   }
 
 }
@@ -489,7 +492,7 @@ function sendMessage(){
   var text = document.getElementById("textToSend").value;
 
   if(text != "") {
-    showMessage(text, "username"); //TODO:JCAMY:Replace it with real username
+    showMessage(text, username); //TODO:JCAMY:Replace it with real username
 
     document.getElementById("textToSend").value = "";
 
@@ -534,11 +537,11 @@ function testDevices(callback, videoNeeded) {
 function setUpDataChannel(dataChannel, username){
   trackExecution('CALL : setUpDataChannel');
   dataChannel.onopen = function(event) {
-    dataChannel.send(username + " connected to chatbox");
+    dataChannel.send(" connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
-    showMessage(event.data, "remote username");
+    showMessage(event.data, remoteusername);
   }
 
   dataChannel.onclose = function(event){
@@ -670,6 +673,24 @@ function trackExecution(data)
     jsonExec = jsonExec + '\n' + data
   }
 }
+
+
+function changePage (page){
+  document.getElementById("alert").style.display = "none";
+
+  if(page === "call")
+  {
+    document.getElementById("connectToSignalingServer").style.display = "none";
+    document.getElementById("inCommunication").style.display = "none";
+    document.getElementById("call").style.display = "block";
+  }
+  else if(page === "inCommunication"){
+    document.getElementById("endCon").style.display = "none";
+    document.getElementById("call").style.display = "none";
+    document.getElementById("inCommunication").style.display = "block";
+  }
+}
+
 function getTimestamp(){
   var timestamp = Date.now();
   var date = new Date(timestamp);
