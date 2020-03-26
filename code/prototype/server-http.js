@@ -49,7 +49,7 @@ function displayUsers() {
   console.log("###");
   console.log(getUserList());
 }
-var u;
+
 if(debug){
   setInterval(displayUsers, 20*1000);
 }
@@ -169,11 +169,7 @@ function login(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
 }
-function isIpAddress(ip){
-  if(ip == null)
-    return false;
-  return ipRegex.test(ip);
-}
+
 function findConnection(recipient){
   if(recipient == null){
     console.log("findConnection: recipient is null. ");
@@ -231,6 +227,8 @@ function sendOffer(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file, other_username doesn't exist
+    console.log(getTimestamp()+" [Offer-2] "+data.to+" is not connected to the server. ");
+    sendErrorMessage(connection, "offer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
 
@@ -258,6 +256,8 @@ function answer(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+    console.log(getTimestamp()+" [Answer-2] "+data.to+" is not connected to the server. ");
+    sendErrorMessage(connection, "answer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
 
