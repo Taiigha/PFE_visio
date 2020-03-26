@@ -33,6 +33,9 @@ const IPv4FamilyName = 'IPv4';
 
 const IPv4Prefix = "::ffff:";
 
+const PING_INTERVAL = 1000;
+const MAX_PING_ID = 5;
+
 const localhostIpAddress = "127.0.0.1";
 
 console.log("Server started. ")
@@ -47,8 +50,11 @@ function displayUsers() {
   console.log(getUserList());
 }
 
-if(debug)
+if(debug){
   setInterval(displayUsers, 20*1000);
+}
+
+
 
 function saveTrace(connection, data){
   console.log("Save trace "+connection.username);
@@ -163,11 +169,7 @@ function login(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
 }
-function isIpAddress(ip){
-  if(ip == null)
-    return false;
-  return ipRegex.test(ip);
-}
+
 function findConnection(recipient){
   if(recipient == null){
     console.log("findConnection: recipient is null. ");
@@ -217,13 +219,16 @@ function sendOffer(connection, data){
       type: "offer",
       offer: data.offer,
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress
+      to: data.to+"@"+conn.ipAddress,
+      videoCall : data.videoCall
     }
     sendTo(conn, message);
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file, other_username doesn't exist
+    console.log(getTimestamp()+" [Offer-2] "+data.to+" is not connected to the server. ");
+    sendErrorMessage(connection, "offer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
 
@@ -251,6 +256,8 @@ function answer(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+    console.log(getTimestamp()+" [Answer-2] "+data.to+" is not connected to the server. ");
+    sendErrorMessage(connection, "answer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
 
@@ -476,7 +483,36 @@ wss.on('connection', function(connection) {
       console.log(getTimestamp()+" [Close-Connection-Event-5] Anonymous user has disconnected. ");
     }
 
+    //:COMMENT:GOVIN:2020-03-26:Ending the ping-pong routine
+    clearInterval(connection.ping_interval);
   });
+
+  connection.is_alive = true;
+  connection.ping_id = 0;
+
+  connection.on('pong', function heartbeat() {
+      console.log(getTimestamp()+" [PONG] "+connection.username+"@"+connection.ipAddress+" is alive (ping id = "+connection.ping_id+"). ");
+      connection.ping_id = 0;
+      connection.is_alive = true;
+  });
+
+  //:COMMENT:GOVIN:2020-03-26:Starting the ping-pong routine
+  connection.ping_interval = setInterval(function(){
+    connection.ping_id++;
+
+    connection.ping();
+
+    if(connection.is_alive){
+      console.log(getTimestamp()+" [PING] "+connection.username+"@"+connection.ipAddress+" (ping id = "+connection.ping_id+")");
+    }
+    else{
+      console.log(getTimestamp()+" [PING] "+connection.username+"@"+connection.ipAddress+" is not alive, closing the socket. ");
+      connection.emit("close");
+    }
+    if(connection.ping_id > MAX_PING_ID){
+      connection.is_alive = false;
+    }
+  }, PING_INTERVAL);
           //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:GLITCH:GOVIN:2020-02-20:type might be ambiguous or inadequate
