@@ -38,15 +38,24 @@ const MAX_PING_ID = 5;
 
 const localhostIpAddress = "127.0.0.1";
 
-console.log("Server started. ")
+
+var server_log_stream = fs.createWriteStream("server-logs-"+getCurrentDate(), {flags:'a'});
+var log_queue = "";
+server_log_stream.readyState = 0;
+server_log_stream.on("open", function(){
+  server_log_stream.readyState = 1;
+  server_log_stream.write(log_queue);
+  log_queue = "";
+});
 
 //:COMMENT:GOVIN:2020-02-20:Will contain the connected users
 var users = {};
 var server_name = "Server Signaling";
-console.log(getTimestamp());
+
+console.log("Server started at "+getTimestamp());
+writeInServerLog("Server started at "+getTimestamp());
 //:DEBUG:GOVIN:2020-03-12:COMMENTARY
 function displayUsers() {
-  console.log("###");
   console.log(getUserList());
 }
 
@@ -54,12 +63,28 @@ if(debug){
   setInterval(displayUsers, 20*1000);
 }
 
+function writeInServerLog(message){
+  var timestampedMessage = (getTimestampedMessage(message) + "\n");
+  if(server_log_stream.readyState == 0){
+    log_queue += timestampedMessage;
+    return;
+  }
+  writeInStream(server_log_stream, timestampedMessage);
+}
+
+function writeInStream(stream, message){
+  stream.write(message);
+}
+
+function getTimestampedMessage(message){
+  return getTimestamp()+" "+message;
+}
 
 
 function saveTrace(connection, data){
   console.log("Save trace "+connection.username);
   var donnees = data.logs;
-  fs.writeFileSync('logs', donnees);
+  fs.writeFileSync(connection.username+'-logs', donnees);
 }
 
 function extractIPv4FromIPv6(ipAddress){
@@ -127,6 +152,7 @@ function login(connection, data){
   var ipAddress = getIPAddress(address);
 
   console.log(getTimestamp()+" [Login-1] User "+ipAddress+" trying to log... ");
+  writeInServerLog("[Login-1] User "+ipAddress+" trying to log... ");
 
   //:COMMENT:GOVIN:2020-02-20:Refuse connection if username already exists.
   if(users[ipAddress]) {
@@ -138,6 +164,7 @@ function login(connection, data){
                 };
     sendTo(connection, message);
     console.log(getTimestamp()+" [Login-2] User "+data.username+" has failed to log, user already connected. ");
+    writeInServerLog("[Login-2] User "+data.username+" has failed to log, user already connected. ");
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
   } else {
 
@@ -165,6 +192,7 @@ function login(connection, data){
     };
     sendTo(connection, message);
     console.log(getTimestamp()+" [Login-3] User "+data.username+" is logged. ");
+    writeInServerLog("[Login-3] User "+data.username+" is logged. ");
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
@@ -200,11 +228,12 @@ function sendOffer(connection, data){
 
   if(data.to == null){
     console.log(getTimestamp()+" [Offer-0] Error: "+connection.username+"@"+connection.ipAddress+"trying to send offer to unknown. ");
+    writeInServerLog("[Offer-0] Error: "+connection.username+"@"+connection.ipAddress+"trying to send offer to unknown. ");
     sendErrorMessage(connection, "offer", "Null recipient. ");
     return;
   }
   console.log(getTimestamp()+" [Offer-1] Sending offer from "+connection.username+" to: "+data.to);
-
+  writeInServerLog("[Offer-1] Sending offer from "+connection.username+" to: "+data.to);
   var conn = users[data.to];
 
   if(conn != null) {
@@ -228,12 +257,14 @@ function sendOffer(connection, data){
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file, other_username doesn't exist
     console.log(getTimestamp()+" [Offer-2] "+data.to+" is not connected to the server. ");
+    writeInServerLog("[Offer-2] "+data.to+" is not connected to the server. ");
     sendErrorMessage(connection, "offer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
 
 function answer(connection, data){
   console.log(getTimestamp()+" [Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
+  writeInServerLog("[Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
@@ -257,6 +288,7 @@ function answer(connection, data){
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     console.log(getTimestamp()+" [Answer-2] "+data.to+" is not connected to the server. ");
+    writeInServerLog("[Answer-2] "+data.to+" is not connected to the server. ");
     sendErrorMessage(connection, "answer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
@@ -275,6 +307,7 @@ function removeElementInArray(array, ipAddress){
 
 function leave(connection, data){
   console.log(getTimestamp()+" [Leave-1] "+connection.username+" is disconnecting from "+data.to);
+  writeInServerLog("[Leave-1] "+connection.username+" is disconnecting from "+data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   if(data.to != null){
@@ -294,22 +327,27 @@ function leave(connection, data){
         sendTo(conn, message);
         //:TODO:GOVIN:2020-02-20:Add the message in a log file
         console.log(getTimestamp()+" [Leave-2] Sending leaving message to "+data.to);
+        writeInServerLog("[Leave-2] Sending leaving message to "+data.to);
       }else{
         console.log(getTimestamp()+" [Leave-4] Error: no connection found for remote "+data.to);
+        writeInServerLog("[Leave-4] Error: no connection found for remote "+data.to);
       }
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     console.log(getTimestamp()+" [Leave-3] Error: no connection found for recipient "+data.to);
+    writeInServerLog("[Leave-3] Error: no connection found for recipient "+data.to);
   }
 }
 
 function sendCandidateTo(connection, data){
   if(data.to == null){
     console.log(getTimestamp()+" [Candidate-0]"+connection.username+" trying to send candidate to null. ");
+    writeInServerLog("[Candidate-0]"+connection.username+" trying to send candidate to null. ");
     sendErrorMessage(connection, "candidate", "Null recipient. ");
     return;
   }
   console.log(getTimestamp()+" [Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
+  writeInServerLog("[Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
   var conn = users[data.to];
 
@@ -322,10 +360,12 @@ function sendCandidateTo(connection, data){
     };
     sendTo(conn, message);
     console.log(getTimestamp()+" [Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
+    writeInServerLog("[Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
-      console.log("Error for : ["+connection.username+ " is sending candidate to : "+data.to+"]");
+      console.log("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
+      writeInServerLog("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
   }
 }
 
@@ -340,6 +380,7 @@ function getUserList(){
 
 function refuse(connection, data){
   console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
+  writeInServerLog("[Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
   //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
@@ -451,6 +492,7 @@ wss.on('connection', function(connection) {
   connection.on("close", function() {
     var ipAddress = connection.ipAddress;
     console.log(getTimestamp()+" [Close-Connection-Event-1] Close connection from "+connection.username+"@"+ipAddress);
+      writeInServerLog("[Close-Connection-Event-1] Close connection from "+connection.username+"@"+ipAddress);
 
     if(users[ipAddress]) {
 
@@ -463,6 +505,7 @@ wss.on('connection', function(connection) {
           //:TODO:GOVIN:2020-02-20:Manage many users
           if(conn != null) {
             console.log(getTimestamp()+" [Close-Connection-Event-2] "+connection.username+"@"+ipAddress+" disconnecting from "+conn.username+"@"+user);
+            writeInServerLog("[Close-Connection-Event-2] "+connection.username+"@"+ipAddress+" disconnecting from "+conn.username+"@"+user);
             conn.otherAddresses = removeElementInArray(conn.otherAddresses, ipAddress);
             var message = {
                           type: "leave",
@@ -472,6 +515,7 @@ wss.on('connection', function(connection) {
             sendTo(conn, message);
             //:TODO:GOVIN:2020-02-20:Add the message in a log file
             console.log(getTimestamp()+" [Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
+            writeInServerLog("[Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
           }
         }
       }
@@ -481,6 +525,7 @@ wss.on('connection', function(connection) {
     }else{
       //:TODO:GOVIN:2020-02-20:Add the message in a log file "anonymous user disconnected"
       console.log(getTimestamp()+" [Close-Connection-Event-5] Anonymous user has disconnected. ");
+      writeInServerLog("[Close-Connection-Event-5] Anonymous user has disconnected. ");
     }
 
     //:COMMENT:GOVIN:2020-03-26:Ending the ping-pong routine
@@ -542,4 +587,9 @@ function getTimestamp(){
   var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
   + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
   return timestamp;
+}
+function getCurrentDate(){
+  var timestamp = Date.now();
+  var date = new Date(timestamp);
+  return date.getDate()+"-"+(date.getMonth()+1)+"-"+date.getFullYear();
 }
