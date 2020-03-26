@@ -74,7 +74,7 @@ function error(err, msg) {
 function wantToHangUp(){
   changePage("call");
   trackExecution('CALL : wantToHangUp');
-  console.log(recipients);
+  console.log("recipients " + recipients);
   recipients.forEach(user => {
     var message = {
       type: "leave",
@@ -127,6 +127,7 @@ function hangUp(){
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
+  recipients = [];
   changePage("call");
   //$("#hangUpButton").prop("disabled", true);
 
@@ -281,7 +282,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "refuse":
         console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
-        changePage("call");
+        hangUp();
         break;
 
       default:
@@ -527,7 +528,7 @@ function testDevices(callback, videoNeeded) {
 function setUpDataChannel(dataChannel, username){
   trackExecution('CALL : setUpDataChannel');
   dataChannel.onopen = function(event) {
-    dataChannel.send(username + " connected to chatbox");
+    dataChannel.send(" connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
