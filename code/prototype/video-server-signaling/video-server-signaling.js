@@ -71,7 +71,7 @@ function error(err, msg) {
   document.getElementById("alert").style.display = "block";
 }
 
-function wantToHangUp(){
+function wantToHangUp(comment){
   changePage("call");
   trackExecution('CALL : wantToHangUp');
   console.log("recipients " + recipients);
@@ -79,7 +79,8 @@ function wantToHangUp(){
     var message = {
       type: "leave",
       from: my_username,
-      to: user
+      to: user,
+      comment :comment
     };
     console.log(message);
     console.log(message);
@@ -97,7 +98,7 @@ function wantToHangUp(){
     logs: jsonExec
   };
   sendMessageToSignalingServer(message);
-  hangUp();
+  hangUp("Vous avez raccroché");
 }
 
 
@@ -115,11 +116,12 @@ function initPeers(){
 function call(videoNeeded){
   if (document.getElementById("recipient").value != "")
   {
-    changePage("inCommunication");
+
     trackExecution("Call function. ");
     initPeers();
     isAVideoCall = videoNeeded;
     testDevices(createOffer, videoNeeded);
+
   }
   else
   {
@@ -129,10 +131,11 @@ function call(videoNeeded){
 
 }
 
-function hangUp(){
+function hangUp(comment){
 
   //:TODO:ROUX:send a debug message to server.
   document.getElementById("endCon").style.display = "block";
+  document.getElementById("endCon").textContent = "Fin de communcation avec : " + recipients + ". " + comment;
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
@@ -285,13 +288,21 @@ function createConnectionToSignalingServer(address, port, username){
       case "leave":
         trackExecution("Leave : ");
         trackExecution(data);
-        hangUp();
+        hangUp(data.comment);
         break;
 
       case "refuse":
         console.log("refuse")
-        window.alert("Votre correspondant a refusé l'appel");
-        hangUp();
+        hangUp("Votre correspondant a refusé l'appel");
+        break;
+
+      case "error":
+        if(data.errorType === "offer")
+        {
+          console.log("error");
+          hangUp("Erreur : L'adresse IP que vous essayez d'appeler n'est pas connecté ");
+        }
+
         break;
 
       default:
@@ -378,6 +389,7 @@ function initLocalEvent(){
         return;
       }
       sendOffer(currentOffer, recipient);
+      changePage("inCommunication");
     }
   };
 
@@ -537,7 +549,7 @@ function testDevices(callback, videoNeeded) {
 function setUpDataChannel(dataChannel, username){
   trackExecution('CALL : setUpDataChannel');
   dataChannel.onopen = function(event) {
-    dataChannel.send(" connected to chatbox");
+    dataChannel.send("connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
@@ -650,6 +662,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
   }).catch(function(err) {
     error(err.name, err.message);
+      wantToHangUp("Votre correspondant a rencontré une erreur.");
   });
 }
 

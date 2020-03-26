@@ -33,7 +33,7 @@ const IPv4FamilyName = 'IPv4';
 
 const IPv4Prefix = "::ffff:";
 
-const PING_INTERVAL = 1000;
+const PING_INTERVAL = 10000;
 const MAX_PING_ID = 5;
 
 const localhostIpAddress = "127.0.0.1";
