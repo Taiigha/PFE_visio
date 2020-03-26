@@ -27,6 +27,8 @@ var connSignalingServer = null;
 var recipients = [];
 var my_username = "Me";
 
+var username;
+var remoteusername;
 
 var currentAnswer = null, currentOffer = null;
 //:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
@@ -70,7 +72,7 @@ function error(err, msg) {
 }
 
 function wantToHangUp(){
-  chagnePage("call");
+  changePage("call");
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
   recipients.forEach(user => {
@@ -111,7 +113,7 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  chagnePage("inCommunication");
+  changePage("inCommunication");
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
@@ -125,7 +127,7 @@ function hangUp(){
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
-  chagnePage("call");
+  changePage("call");
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
@@ -170,7 +172,7 @@ function connectToSignalingServer(){
   }
   var address = document.getElementById("url").value;
   var port = document.getElementById("port").value;
-  var username = document.getElementById("username").value;
+  username = document.getElementById("username").value;
   //Regex match
   if(!(address == null || address == "") && !(port == null || port == ""))
   {
@@ -178,7 +180,8 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
-      chagnePage("call");
+
+      changePage("call");
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
@@ -223,9 +226,9 @@ function createConnectionToSignalingServer(address, port, username){
         recipients.push(data.from.split("@")[1])
         console.log("Received offer from "+data.from);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
-          chagnePage("inCommunication");
+          changePage("inCommunication");
           currentOffer = data.offer;
-          other_username = data.from;
+          remoteusername = data.from.split("@")[0]
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
@@ -243,6 +246,7 @@ function createConnectionToSignalingServer(address, port, username){
         //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
+        remoteusername = data.from.split("@")[0]
         receivedAnswer(currentAnswer);
         break;
 
@@ -277,7 +281,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "refuse":
         console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
-        chagnePage("call");
+        changePage("call");
         break;
 
       default:
@@ -478,7 +482,7 @@ function sendMessage(){
   var text = document.getElementById("textToSend").value;
 
   if(text != "") {
-    showMessage(text, "username"); //TODO:JCAMY:Replace it with real username
+    showMessage(text, username); //TODO:JCAMY:Replace it with real username
 
     document.getElementById("textToSend").value = "";
 
@@ -527,7 +531,7 @@ function setUpDataChannel(dataChannel, username){
   }
 
   dataChannel.onmessage = function(event) {
-    showMessage(event.data, "remote username");
+    showMessage(event.data, remoteusername);
   }
 
   dataChannel.onclose = function(event){
@@ -661,7 +665,7 @@ function trackExecution(data)
 }
 
 
-function chagnePage (page){
+function changePage (page){
   document.getElementById("alert").style.display = "none";
 
   if(page === "call")
