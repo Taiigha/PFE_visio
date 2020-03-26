@@ -332,6 +332,36 @@ function getUserList(){
   return user_names;
 }
 
+function refuse(connection, data){
+  console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
+  //:TODO:GOVIN:2020-02-20:Add the message in a log file
+
+  //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
+  var conn = users[data.to];
+
+  if(conn != null) {
+
+    if(connection.otherAddresses == null){
+      connection.otherAddresses = [];
+    }
+    connection.otherAddresses.push(data.to);
+
+
+    var message = {
+      type: "refuse",
+      from: connection.username+"@"+connection.ipAddress,
+      to: data.to+"@"+conn.ipAddress,
+      answer: data.answer
+    }
+    console.log("Refuse" + message + " conn : "+ conn )
+    sendTo(conn, message);
+    //:TODO:GOVIN:2020-02-20:Add the message in a log file
+  }else{
+      console.log("conn ==  NULL")
+    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+  }
+}
+
 wss.on('connection', function(connection) {
 
   console.log("Connection incoming... ");
@@ -397,10 +427,7 @@ wss.on('connection', function(connection) {
       break;
 
       case "refuse":
-        var message = {
-                      type: "refuse"
-                    };
-        sendTo(connection, message);
+        refuse(connection,data)
         break;
 
       default:

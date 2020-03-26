@@ -1,10 +1,11 @@
+
 var tracks = [];
 
-var conf = null;//{iceServers: [
-  //{urls: "stun:stun.l.google.com:19302"}/*,
+var conf ={iceServers: [
+  {urls: "stun:stun.l.google.com:19302"}/*,
   //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-//]
-//};
+]
+};
 
 var opt = {optional: [
   {DtlsSrtpKeyAgreement: true}
@@ -34,6 +35,7 @@ var currentAnswer = null, currentOffer = null;
 var isAVideoCall = false;
 
 
+
 /*$(document).ready(e => {
   $("#username").val("Me");
   $("#url").val("192.168.0.13");
@@ -53,14 +55,24 @@ var isAVideoCall = false;
     hangUp();
   });
 });*/
+
+
+
 document.onload = function(){
   trackExecution("finish");
   document.getElementById("username").value = "Me";
 }
 
-
+function error(err, msg) {
+  trackExecution("ERR : " + err + " : " + msg);
+  document.getElementById("alert").textContent = err + " : " + msg;
+  document.getElementById("alert").style.display = "block";
+}
 
 function wantToHangUp(){
+  document.getElementById("call").style.display = "block";
+  document.getElementById("alert").style.display = "none";
+  document.getElementById("inCommunication").style.display = "none";
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
   recipients.forEach(user => {
@@ -101,6 +113,10 @@ function initPeers(){
 }
 
 function call(videoNeeded){
+  document.getElementById("endCon").style.display = "none";
+  document.getElementById("inCommunication").style.display = "block";
+  document.getElementById("call").style.display = "none";
+  document.getElementById("alert").style.display = "none";
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
@@ -113,6 +129,10 @@ function hangUp(){
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
+  document.getElementById("inCommunication").style.display = "none";
+  document.getElementById("call").style.display = "block";
+  document.getElementById("endCon").style.display = "block";
+  document.getElementById("alert").style.display = "none";
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
@@ -145,6 +165,7 @@ function hangUp(){
 function connectToSignalingServer(){
 
   trackExecution('CALL : connectToSignalingServer');
+
   //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
   //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
@@ -164,6 +185,9 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
+      document.getElementById("alert").style.display = "none";
+      document.getElementById("call").style.display = "block";
+      document.getElementById("connectToSignalingServer").style.display = "none";
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
@@ -178,12 +202,14 @@ function loginSignalingServer(username){
 
   sendMessageToSignalingServer(message);
 }
+
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
   var ws = new WebSocket("ws://"+address+":"+port)
 
   ws.onmessage = function (evt) {
+    console.log("refuse")
     trackExecution("[Before Processing] Message received = " + evt.data);
     var data;
     //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
@@ -203,16 +229,21 @@ function createConnectionToSignalingServer(address, port, username){
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         console.log("Received offer from "+data.from);
+
+        recipients.push(data.from.split("@")[1]);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
+          document.getElementById("call").style.display = "none";
+          document.getElementById("inCommunication").style.display = "block";
+          document.getElementById("alert").style.display = "none";
           currentOffer = data.offer;
           other_username = data.from;
-          recipients.push(data.from.split("@")[1]);
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
+          recipients.push(data.from.split("@")[1])
           var message = {
             type:"refuse",
-            to:data.from
+            to:recipients
           }
           sendMessageToSignalingServer(message);
         }
@@ -242,9 +273,9 @@ function createConnectionToSignalingServer(address, port, username){
         if(data.success){
           trackExecution("Login: Success when login. ");
         }else{
-          trackExecution("Login: Error while trying to login. ");
           connSignalingServer.close();
           connSignalingServer == null;
+          error("Login", "Error while trying to login");
         }
 
         break;
@@ -256,6 +287,7 @@ function createConnectionToSignalingServer(address, port, username){
         break;
 
       case "refuse":
+        console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
         break;
 
@@ -272,6 +304,7 @@ function createConnectionToSignalingServer(address, port, username){
 
   ws.onerror = function(err){
     console.error("Error while connecting to WebSocket : ", err);
+    error("Error while connecting to WebSocket", err );
   };
 
   return ws;
@@ -281,7 +314,7 @@ function sendMessageToSignalingServer(message){
   if(connSignalingServer != null){
     connSignalingServer.send(JSON.stringify(message));
   }else{
-    trackExecution("Error : No connection to signaling server. ");
+    error("No connection to signaling server" );
   }
 
 }
@@ -493,6 +526,7 @@ function testDevices(callback, videoNeeded) {
     callback(isAudioAvailable, isVideoAvailable);
   })
   .catch(function(err) {
+    document.getElementById("alert").textContent = err.name + " : " + err.message;
     trackExecution("ERR : " + err.name + " : " + err.message);
   });
 }
@@ -550,14 +584,14 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     //Create offer
     local.createOffer().then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
-        trackExecution("ERR : " + err.name + " : " + err.message);
+        error(err.name, err.message);
       });
     }).catch(function(err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
   }).catch(function(err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
@@ -599,20 +633,20 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
-        trackExecution("ERR : " + err.name + " : " + err.message);
+        error(err.name, err.message);
       });
     }).catch(function(err) {
-      trackExecution("ERR : " + err.name + " : " + err.message);
+      error(err.name, err.message);
     });
 
   }).catch(function(err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
@@ -620,7 +654,7 @@ function receivedAnswer(answer){
   trackExecution('CALL : receivedAnswer');
 
   local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
-    trackExecution("ERR : " + err.name + " : " + err.message);
+    error(err.name, err.message);
   });
 }
 
