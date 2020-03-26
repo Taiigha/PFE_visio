@@ -70,9 +70,7 @@ function error(err, msg) {
 }
 
 function wantToHangUp(){
-  document.getElementById("call").style.display = "block";
-  document.getElementById("alert").style.display = "none";
-  document.getElementById("inCommunication").style.display = "none";
+  chagnePage("call");
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
   recipients.forEach(user => {
@@ -113,10 +111,7 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  document.getElementById("endCon").style.display = "none";
-  document.getElementById("inCommunication").style.display = "block";
-  document.getElementById("call").style.display = "none";
-  document.getElementById("alert").style.display = "none";
+  chagnePage("inCommunication");
   trackExecution("Call function. ");
   initPeers();
   isAVideoCall = videoNeeded;
@@ -126,13 +121,11 @@ function call(videoNeeded){
 function hangUp(){
 
   //:TODO:ROUX:send a debug message to server.
+  document.getElementById("endCon").style.display = "block";
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
-  document.getElementById("inCommunication").style.display = "none";
-  document.getElementById("call").style.display = "block";
-  document.getElementById("endCon").style.display = "block";
-  document.getElementById("alert").style.display = "none";
+  chagnePage("call");
   //$("#hangUpButton").prop("disabled", true);
 
   if(local != null){
@@ -185,9 +178,7 @@ function connectToSignalingServer(){
     connSignalingServer.onopen = e => {
       trackExecution('Socket connection opened properly');
       loginSignalingServer(username);
-      document.getElementById("alert").style.display = "none";
-      document.getElementById("call").style.display = "block";
-      document.getElementById("connectToSignalingServer").style.display = "none";
+      chagnePage("call");
     }
   }else{
     trackExecution("Paramêtres manquants pour effectuer la connexion. ");
@@ -228,19 +219,16 @@ function createConnectionToSignalingServer(address, port, username){
         trackExecution("Offer : ");
         //console.log(data);
         //:GLITCH:GOVIN:2020-02-20:Better user management required
+        recipients = [];
+        recipients.push(data.from.split("@")[1])
         console.log("Received offer from "+data.from);
-
-        recipients.push(data.from.split("@")[1]);
         if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
-          document.getElementById("call").style.display = "none";
-          document.getElementById("inCommunication").style.display = "block";
-          document.getElementById("alert").style.display = "none";
+          chagnePage("inCommunication");
           currentOffer = data.offer;
           other_username = data.from;
           testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
         }
         else {
-          recipients.push(data.from.split("@")[1])
           var message = {
             type:"refuse",
             to:recipients
@@ -289,6 +277,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "refuse":
         console.log("refuse")
         window.alert("Votre correspondant a refusé l'appel");
+        chagnePage("call");
         break;
 
       default:
@@ -670,6 +659,24 @@ function trackExecution(data)
     jsonExec = jsonExec + '\n' + data
   }
 }
+
+
+function chagnePage (page){
+  document.getElementById("alert").style.display = "none";
+
+  if(page === "call")
+  {
+    document.getElementById("connectToSignalingServer").style.display = "none";
+    document.getElementById("inCommunication").style.display = "none";
+    document.getElementById("call").style.display = "block";
+  }
+  else if(page === "inCommunication"){
+    document.getElementById("endCon").style.display = "none";
+    document.getElementById("call").style.display = "none";
+    document.getElementById("inCommunication").style.display = "block";
+  }
+}
+
 function getTimestamp(){
   var timestamp = Date.now();
   var date = new Date(timestamp);
