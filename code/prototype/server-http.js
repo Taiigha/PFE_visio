@@ -217,7 +217,8 @@ function sendOffer(connection, data){
       type: "offer",
       offer: data.offer,
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress
+      to: data.to+"@"+conn.ipAddress,
+      videoCall : data.videoCall
     }
     sendTo(conn, message);
 
