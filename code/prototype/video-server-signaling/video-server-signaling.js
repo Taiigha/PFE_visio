@@ -113,11 +113,20 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  changePage("inCommunication");
-  trackExecution("Call function. ");
-  initPeers();
-  isAVideoCall = videoNeeded;
-  testDevices(createOffer, videoNeeded);
+  if (document.getElementById("recipient").value != "")
+  {
+    changePage("inCommunication");
+    trackExecution("Call function. ");
+    initPeers();
+    isAVideoCall = videoNeeded;
+    testDevices(createOffer, videoNeeded);
+  }
+  else
+  {
+    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP. Veuillez renseigner une adresse IP destinataire";
+    document.getElementById("alert").style.display = "block";
+  }
+
 }
 
 function hangUp(){
@@ -308,7 +317,7 @@ function sendMessageToSignalingServer(message){
   if(connSignalingServer != null){
     connSignalingServer.send(JSON.stringify(message));
   }else{
-    error("No connection to signaling server" );
+    error("Connection : No connection to signaling server" );
   }
 
 }
