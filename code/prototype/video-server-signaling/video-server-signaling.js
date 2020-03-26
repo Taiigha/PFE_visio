@@ -113,7 +113,7 @@ function initPeers(){
 }
 
 function call(videoNeeded){
-  if (document.getElementById("recipient").textContent != "")
+  if (document.getElementById("recipient").value != "")
   {
     changePage("inCommunication");
     trackExecution("Call function. ");
