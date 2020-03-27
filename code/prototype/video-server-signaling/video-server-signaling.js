@@ -146,7 +146,6 @@ function hangUp(comment) {
     remote = null;
   }
 
-
   stopStreamedVideo(document.getElementById("sendVideo"));
   stopStreamedVideo(document.getElementById("receiveVideo"));
 
