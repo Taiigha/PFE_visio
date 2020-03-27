@@ -1,15 +1,14 @@
-
 var tracks = [];
 
 var conf ={iceServers: [
-  {urls: "stun:stun.l.google.com:19302"}/*,
-  //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-]
+    {urls: "stun:stun.l.google.com:19302"}/*,
+  {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
+  ]
 };
 
 var opt = {optional: [
-  {DtlsSrtpKeyAgreement: true}
-]
+    {DtlsSrtpKeyAgreement: true}
+  ]
 };
 
 var jsonExec = "";
@@ -36,30 +35,10 @@ var currentAnswer = null, currentOffer = null;
 
 var isAVideoCall = false;
 
+var isNegotiating = false;
+
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
-
-/*$(document).ready(e => {
-  $("#username").val("Me");
-  $("#url").val("192.168.0.13");
-  $("#port").val("9090");
-
-  //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
-  $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
-
-  $("#callButton").on("click", call);
-  $("#hangUpButton").on("click", e => {
-    var message = {
-      type: "leave",
-      from: my_username,
-      to: other_username
-    };
-    sendMessageToSignalingServer(message);
-    hangUp();
-  });
-});*/
-
-
 
 document.onload = function(){
   trackExecution("finish");
@@ -88,10 +67,6 @@ function wantToHangUp(comment){
     sendMessageToSignalingServer(message);
   });
 
-
-
-
-
   message = {
     type: "logs",
     from: my_username,
@@ -101,7 +76,6 @@ function wantToHangUp(comment){
   sendMessageToSignalingServer(message);
   hangUp("Vous avez raccroché");
 }
-
 
 function initPeers(){
   trackExecution('CALL : init');
@@ -169,7 +143,6 @@ function hangUp(comment){
   dataChannel2 = null;
 
 }
-
 
 function connectToSignalingServer(){
 
@@ -325,6 +298,7 @@ function createConnectionToSignalingServer(address, port, username){
 
   return ws;
 }
+
 function sendMessageToSignalingServer(message){
   trackExecution('CALL : sendMessageToSignalingServer');
   if(connSignalingServer != null){
@@ -332,7 +306,6 @@ function sendMessageToSignalingServer(message){
   }else{
     error("Connection : No connection to signaling server" );
   }
-
 }
 
 function sendOffer(offer, recipient){
@@ -368,7 +341,6 @@ function sendAnswer(answer, recipient){
   sendMessageToSignalingServer(message);
 }
 
-var isNegotiating = false;
 function initLocalEvent() {
   if(local == null){
     trackExecution("Local RTCPeerConnection is null. ");
@@ -581,7 +553,6 @@ function setUpDataChannel(dataChannel, username){
   }
 }
 
-
 function createOffer(isAudioAvailable, isVideoAvailable) {
   trackExecution('CALL : createOffer');
 
@@ -694,8 +665,7 @@ function receivedAnswer(answer){
   });
 }
 
-function trackExecution(data)
-{
+function trackExecution(data) {
   if(debug)
   {
     if(perf)
@@ -706,7 +676,6 @@ function trackExecution(data)
     jsonExec = jsonExec + '\n' + data
   }
 }
-
 
 function changePage (page){
   document.getElementById("alert").style.display = "none";
