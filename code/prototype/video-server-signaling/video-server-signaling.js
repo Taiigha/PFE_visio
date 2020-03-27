@@ -24,7 +24,6 @@ var dataChannel2 = null;
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
 var recipients = [];
-//var my_username = "Me"; //:TODO:JCAMY:2020-27-03:Remove
 
 var username;
 var remoteUsername;
@@ -42,7 +41,6 @@ const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:
 
 document.onload = function() {
   trackExecution("Document totally loaded");
-  //document.getElementById("username").value = "Me"; //:TODO:JCAMY:2020-27-03:Remove
 }
 
 function getTimestamp() {
@@ -185,7 +183,7 @@ function wantToHangUp(comment) {
   };
 
   sendMessageToSignalingServer(message);
-  hangUp("Vous avez raccroché."); //TODO erreur coté appelant.
+  hangUp("Vous avez raccroché.");
 }
 
 function sendOffer(offer, recipient) {
@@ -604,7 +602,7 @@ function sendMessage() {
 
   if(text != "")
   {
-    showMessage(text, username); //TODO:JCAMY:Replace it with real username
+    showMessage(text, username);
 
     document.getElementById("textToSend").value = "";
 
