@@ -146,7 +146,7 @@ function hangUp(comment) {
     remote = null;
   }
 
-  recipients = [];
+
   stopStreamedVideo(document.getElementById("sendVideo"));
   stopStreamedVideo(document.getElementById("receiveVideo"));
 
@@ -719,6 +719,21 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
   }).catch(function(err) {
     error(err.name, err.message);
-    wantToHangUp("Votre correspondant a rencontré une erreur.");
+
+    recipients.forEach(function(user) {
+      var message = {
+        type: "leave",
+        //from: my_username,
+        from: username,
+        to: user,
+        comment : "Votre correspondant a rencontré une erreur."
+      };
+
+      console.log(message);
+
+      sendMessageToSignalingServer(message);
+    });
+
+    hangUp("Vous n'avez pas donnée l'autorisation d'utiliser votre micro.");
   });
 }
