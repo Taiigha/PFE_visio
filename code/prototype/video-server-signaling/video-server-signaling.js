@@ -734,6 +734,6 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
       sendMessageToSignalingServer(message);
     });
 
-    hangUp("Vous n'avez pas donnée l'autorisation d'utiliser votre micro.");
+    hangUp("Une erreur c'est produite.");
   });
 }
