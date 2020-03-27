@@ -674,6 +674,24 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
   });
 }
 
+function recipientError() {
+  recipients.forEach(function(user) {
+    var message = {
+      type: "leave",
+      //from: my_username,
+      from: username,
+      to: user,
+      comment : "Votre correspondant a rencontré une erreur."
+    };
+
+    console.log(message);
+
+    sendMessageToSignalingServer(message);
+  });
+
+  hangUp("Une erreur s'est produite.");
+}
+
 function receivedOffer(isAudioAvailable, isVideoAvailable) {
   trackExecution("CALL : receivedOffer");
 
@@ -708,34 +726,22 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
       error(err.name, err.message);
+      recipientError();
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
         error(err.name, err.message);
+        recipientError();
       });
     }).catch(function(err) {
       error(err.name, err.message);
+      recipientError();
     });
 
   }).catch(function(err) {
     error(err.name, err.message);
-
-    recipients.forEach(function(user) {
-      var message = {
-        type: "leave",
-        //from: my_username,
-        from: username,
-        to: user,
-        comment : "Votre correspondant a rencontré une erreur."
-      };
-
-      console.log(message);
-
-      sendMessageToSignalingServer(message);
-    });
-
-    hangUp("Une erreur s'est produite.");
+    recipientError();
   });
 }
