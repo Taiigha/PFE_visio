@@ -168,7 +168,7 @@ function wantToHangUp(comment) {
       //from: my_username,
       from: username,
       to: user,
-      comment :comment
+      comment : comment
     };
 
     console.log(message);
@@ -185,8 +185,7 @@ function wantToHangUp(comment) {
   };
 
   sendMessageToSignalingServer(message);
-
-  hangUp("Vous avez raccroché");
+  hangUp("Vous avez raccroché"); //TODO erreur coté appelant.
 }
 
 function sendOffer(offer, recipient) {
