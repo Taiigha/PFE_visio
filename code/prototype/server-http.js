@@ -1,20 +1,14 @@
 /*
 * Prototype inspired by the following tutorial (20/02/2020):
 https://www.tutorialspoint.com/webrtc/webrtc_signaling.htm
-
-
 * Start the server :
 node server.js
-
 * Test with a client on another terminal :
 wscat -c localhost:9090
-
 * Example of client command :
 {"type":"login", "name":"test"}
 {"type":"list"}
-
 * Command "list" has been added for testing purpose showing the list of connected users
-
 */
 const debug = true;
 
@@ -322,7 +316,8 @@ function leave(connection, data){
         var message = {
           type: "leave",
           from: connection.username+"@"+connection.ipAddress,
-          to: data.to+"@"+conn.ipAddress
+          to: data.to+"@"+conn.ipAddress,
+          comment : data.comment
         };
         sendTo(conn, message);
         //:TODO:GOVIN:2020-02-20:Add the message in a log file
