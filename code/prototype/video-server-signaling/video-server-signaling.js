@@ -72,7 +72,7 @@ function error(err, msg) {
   document.getElementById("alert").style.display = "block";
 }
 
-function wantToHangUp(comment){
+function wantToHangUp(addcomment){
   changePage("call");
   trackExecution('CALL : wantToHangUp');
   console.log(recipients);
@@ -81,7 +81,7 @@ function wantToHangUp(comment){
       type: "leave",
       from: my_username,
       to: user,
-      comment :comment
+      comment : addcomment
     };
     console.log(message);
     console.log(message);
@@ -99,7 +99,7 @@ function wantToHangUp(comment){
     logs: jsonExec
   };
   sendMessageToSignalingServer(message);
-  hangUp("Vous avez raccroché");
+  hangUp("Vous avez raccroché"); //TODO erreur coté appelant.
 }
 
 
@@ -136,8 +136,9 @@ function call(videoNeeded){
 function hangUp(comment){
 
   //:TODO:ROUX:send a debug message to server.
+
   document.getElementById("endCon").style.display = "block";
-  document.getElementById("endCon").textContent = "Fin de communcation avec : " + recipients + ". " + comment;
+  document.getElementById("endCon").textContent = "Fin de communcation avec : " + recipients + " . " + comment;
   trackExecution("HangUp function. ");
   console.log(jsonExec);
   document.getElementById('hangUpButton').disabled = true;
@@ -160,7 +161,7 @@ function hangUp(comment){
     remote = null;
   }
 
-
+  recipients = [];
   stopStreamedVideo(document.getElementById('sendVideo'));
   stopStreamedVideo(document.getElementById('receiveVideo'));
 

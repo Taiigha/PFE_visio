@@ -322,7 +322,8 @@ function leave(connection, data){
         var message = {
           type: "leave",
           from: connection.username+"@"+connection.ipAddress,
-          to: data.to+"@"+conn.ipAddress
+          to: data.to+"@"+conn.ipAddress,
+          comment : data.comment
         };
         sendTo(conn, message);
         //:TODO:GOVIN:2020-02-20:Add the message in a log file
