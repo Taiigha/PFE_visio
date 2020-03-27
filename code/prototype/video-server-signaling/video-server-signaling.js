@@ -635,7 +635,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
   if(isVideoAvailable)
   {
-    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
   }
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable , video: isVideoAvailable }).then(function(stream) {
@@ -698,7 +698,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
   if(isVideoAvailable)
   {
-    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
   }
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
