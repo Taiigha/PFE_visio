@@ -146,7 +146,7 @@ function hangUp(comment) {
     remote = null;
   }
 
-
+  recipients = [];
   stopStreamedVideo(document.getElementById("sendVideo"));
   stopStreamedVideo(document.getElementById("receiveVideo"));
 
@@ -185,7 +185,7 @@ function wantToHangUp(comment) {
   };
 
   sendMessageToSignalingServer(message);
-  hangUp("Vous avez raccroché"); //TODO erreur coté appelant.
+  hangUp("Vous avez raccroché."); //TODO erreur coté appelant.
 }
 
 function sendOffer(offer, recipient) {
@@ -408,6 +408,8 @@ function testDevices(callback, videoNeeded) {
 }
 
 function call(videoNeeded) {
+  document.getElementById("endCon").style.display = "none";
+
   var address = document.getElementById("recipient").value;
 
   if ((address != "") && (ipV4Regex.test(address) || ipV6Regex.test(address)))
@@ -518,7 +520,7 @@ function createConnectionToSignalingServer(address, port, username) {
         break;
 
       case "refuse":
-        hangUp("Votre correspondant a refusé l'appel");
+        hangUp("Votre correspondant a refusé l'appel.");
         break;
 
       case "error":
@@ -719,21 +721,6 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
   }).catch(function(err) {
     error(err.name, err.message);
-
-    recipients.forEach(function(user) {
-      var message = {
-        type: "leave",
-        //from: my_username,
-        from: username,
-        to: user,
-        comment : "Votre correspondant a rencontré une erreur."
-      };
-
-      console.log(message);
-
-      sendMessageToSignalingServer(message);
-    });
-
-    hangUp("Vous n'avez pas donnée l'autorisation d'utiliser votre micro.");
+    wantToHangUp("Votre correspondant a rencontré une erreur.");
   });
 }
