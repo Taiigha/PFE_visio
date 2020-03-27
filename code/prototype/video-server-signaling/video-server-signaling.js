@@ -176,7 +176,6 @@ function wantToHangUp(comment) {
 
   message = {
     type: "logs",
-    //from: my_username,
     from: username,
     to: recipients,
     logs: jsonExec
@@ -676,7 +675,6 @@ function recipientError() {
   recipients.forEach(function(user) {
     var message = {
       type: "leave",
-      //from: my_username,
       from: username,
       to: user,
       comment : "Votre correspondant a rencontré une erreur."
