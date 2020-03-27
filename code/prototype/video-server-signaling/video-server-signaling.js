@@ -632,10 +632,12 @@ function setUpDataChannel(dataChannel, username) {
 function createOffer(isAudioAvailable, isVideoAvailable) {
   trackExecution("CALL : createOffer");
 
+  /* Configuration video
   if(isVideoAvailable)
   {
-    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
-  }
+    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+  }*/
+
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable , video: isVideoAvailable }).then(function(stream) {
 
