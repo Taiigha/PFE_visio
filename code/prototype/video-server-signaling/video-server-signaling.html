@@ -32,7 +32,7 @@
             <h1>WebRTC Visioconference</h1>
             <b-alert style="display:none" id="alert" show variant="danger"></b-alert>
             <b-alert style="display:none" id="info" show variant="info"></b-alert>
-            
+
             <div id="connectToSignalingServer">
 							<b-container fluid>
 						  <b-row class="my-1">
@@ -131,19 +131,16 @@
             </div>
             <input type="text" id="textToSend">
             <b-button variant="primary" type="submit" id="sendText" class="btn" onclick="sendMessage()">Envoyer</b-button>
-
-            <div id="send">
-                <h2>Send </h2>
-                <video id="sendVideo" muted>
-                </video>
-            </div>
-
             <div id="receive">
                 <h2>Receive</h2>
                 <video id="receiveVideo">
                 </video>
             </div>
-
+            <div id="send">
+                <h2>Send </h2>
+                <video id="sendVideo" muted>
+                </video>
+            </div>
 					</div>
         </b-container>
     </div>

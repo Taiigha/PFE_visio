@@ -1,15 +1,5 @@
 div#send {
-	position : absolute;
-	left : 70%;
-	text-align: left;
 	width : 25%;
-}
-div#receive {
-	position : absolute;
-
-
-	text-align: left;
-	width : 65%;
 }
 
 video {
@@ -29,5 +19,5 @@ div#call {
 }
 
 div#inCommunication {
-	display:none
+
 }
