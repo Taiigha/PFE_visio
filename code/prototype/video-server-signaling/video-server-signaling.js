@@ -24,7 +24,6 @@ var dataChannel2 = null;
 var connSignalingServer = null;
 //:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
 var recipients = [];
-//var my_username = "Me"; //:TODO:JCAMY:2020-27-03:Remove
 
 var username;
 var remoteUsername;
@@ -42,7 +41,6 @@ const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:
 
 document.onload = function() {
   trackExecution("Document totally loaded");
-  //document.getElementById("username").value = "Me"; //:TODO:JCAMY:2020-27-03:Remove
 }
 
 function getTimestamp() {
@@ -185,7 +183,7 @@ function wantToHangUp(comment) {
   };
 
   sendMessageToSignalingServer(message);
-  hangUp("Vous avez raccroché."); //TODO erreur coté appelant.
+  hangUp("Vous avez raccroché.");
 }
 
 function sendOffer(offer, recipient) {
@@ -604,7 +602,7 @@ function sendMessage() {
 
   if(text != "")
   {
-    showMessage(text, username); //TODO:JCAMY:Replace it with real username
+    showMessage(text, username);
 
     document.getElementById("textToSend").value = "";
 
@@ -637,7 +635,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
   if(isVideoAvailable)
   {
-    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
   }
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable , video: isVideoAvailable }).then(function(stream) {
@@ -658,10 +656,10 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
     //Create datachannel
     dataChannel1 = local.createDataChannel("dc1", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel1, "sender");
+    setUpDataChannel(dataChannel1, username);
 
     //Create offer
-    local.createOffer().then(function(offer) {
+    local.createOffer({offerToReceiveVideo: true}).then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
         error(err.name, err.message);
       });
@@ -674,6 +672,24 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
   });
 }
 
+function recipientError() {
+  recipients.forEach(function(user) {
+    var message = {
+      type: "leave",
+      //from: my_username,
+      from: username,
+      to: user,
+      comment : "Votre correspondant a rencontré une erreur."
+    };
+
+    console.log(message);
+
+    sendMessageToSignalingServer(message);
+  });
+
+  hangUp("Une erreur s'est produite.");
+}
+
 function receivedOffer(isAudioAvailable, isVideoAvailable) {
   trackExecution("CALL : receivedOffer");
 
@@ -682,7 +698,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
   if(isVideoAvailable)
   {
-    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
   }
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
@@ -703,39 +719,27 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
     //Create datachannel
     dataChannel2 = remote.createDataChannel("dc2", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel2, "receiver");
+    setUpDataChannel(dataChannel2, username);
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
       error(err.name, err.message);
+      recipientError();
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
         error(err.name, err.message);
+        recipientError();
       });
     }).catch(function(err) {
       error(err.name, err.message);
+      recipientError();
     });
 
   }).catch(function(err) {
     error(err.name, err.message);
-
-    recipients.forEach(function(user) {
-      var message = {
-        type: "leave",
-        //from: my_username,
-        from: username,
-        to: user,
-        comment : "Votre correspondant a rencontré une erreur."
-      };
-
-      console.log(message);
-
-      sendMessageToSignalingServer(message);
-    });
-
-    hangUp("Une erreur s'est produite.");
+    recipientError();
   });
 }
