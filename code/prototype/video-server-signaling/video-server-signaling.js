@@ -656,10 +656,10 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
     //Create datachannel
     dataChannel1 = local.createDataChannel("dc1", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel1, "sender");
+    setUpDataChannel(dataChannel1, username);
 
     //Create offer
-    local.createOffer().then(function(offer) {
+    local.createOffer({offerToReceiveVideo: true}).then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
         error(err.name, err.message);
       });
@@ -719,7 +719,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
 
     //Create datachannel
     dataChannel2 = remote.createDataChannel("dc2", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel2, "receiver");
+    setUpDataChannel(dataChannel2, username);
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
