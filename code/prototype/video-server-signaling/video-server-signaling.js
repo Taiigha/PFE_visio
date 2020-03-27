@@ -185,7 +185,7 @@ function wantToHangUp(comment) {
   };
 
   sendMessageToSignalingServer(message);
-  hangUp("Vous avez raccroché"); //TODO erreur coté appelant.
+  hangUp("Vous avez raccroché."); //TODO erreur coté appelant.
 }
 
 function sendOffer(offer, recipient) {
@@ -408,6 +408,8 @@ function testDevices(callback, videoNeeded) {
 }
 
 function call(videoNeeded) {
+  document.getElementById("endCon").style.display = "none";
+
   var address = document.getElementById("recipient").value;
 
   if ((address != "") && (ipV4Regex.test(address) || ipV6Regex.test(address)))
@@ -518,7 +520,7 @@ function createConnectionToSignalingServer(address, port, username) {
         break;
 
       case "refuse":
-        hangUp("Votre correspondant a refusé l'appel");
+        hangUp("Votre correspondant a refusé l'appel.");
         break;
 
       case "error":
@@ -734,6 +736,6 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
       sendMessageToSignalingServer(message);
     });
 
-    hangUp("Une erreur c'est produite.");
+    hangUp("Une erreur s'est produite.");
   });
 }
