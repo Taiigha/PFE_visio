@@ -57,7 +57,6 @@ var server_name = "Server Signaling";
 console.log("Server started at "+getTimestamp());
 writeInServerLog("Server started at "+getTimestamp());
 
-//:DEBUG:GOVIN:2020-03-12:COMMENTARY
 function displayUsers() {
   var userList = getUserList();
   console.log(userList);
@@ -161,7 +160,6 @@ function login(connection, data){
     sendTo(connection, message);
     console.log(getTimestamp()+" [Login-2] User "+data.username+" has failed to log, user already connected. ");
     writeInServerLog("[Login-2] User "+data.username+" has failed to log, user already connected. ");
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
   } else {
 
     //:BUG:GOVIN:2020-03-15:If the client is the server are on the same computer
@@ -190,8 +188,6 @@ function login(connection, data){
     sendTo(connection, message);
     console.log(getTimestamp()+" [Login-3] User "+data.username+" is logged. ");
     writeInServerLog("[Login-3] User "+data.username+" is logged. ");
-
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
 }
 
@@ -238,8 +234,7 @@ function sendOffer(connection, data){
   var conn = users[data.to];
 
   if(conn != null) {
-    //:TODO:GOVIN:2020-02-20:Manage many connections
-    //:COMMENT:GOVIN:2020-02-20:We assume that data.to is an IPAdress
+    //:COMMENT:GOVIN:2020-02-20:We assume that data.to is an IPAddress
     if(connection.otherAddresses == null){
       connection.otherAddresses = [];
     }
@@ -253,11 +248,8 @@ function sendOffer(connection, data){
       videoCall : data.videoCall
     }
     sendTo(conn, message);
-
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file, other_username doesn't exist
-    console.log(getTimestamp()+" [Offer-2] "+data.to+" is not connected to the server. ");
+    console.log(getTimestamp()+" [Offer-2] From "+connection.username+"@"+connection.ipAddress+" to "+data.to+" is not connected to the server. ");
     writeInServerLog("[Offer-2] "+data.to+" is not connected to the server. ");
     sendErrorMessage(connection, "offer", "Error: "+data.to+"is not connected to the server. ");
   }
@@ -266,7 +258,6 @@ function sendOffer(connection, data){
 function answer(connection, data){
   console.log(getTimestamp()+" [Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
   writeInServerLog("[Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
-  //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
@@ -285,11 +276,9 @@ function answer(connection, data){
       answer: data.answer
     }
     sendTo(conn, message);
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
-    console.log(getTimestamp()+" [Answer-2] "+data.to+" is not connected to the server. ");
-    writeInServerLog("[Answer-2] "+data.to+" is not connected to the server. ");
+    console.log(getTimestamp()+" [Answer-2] From "+connection.username+"@"+connection.ipAddress+" to "+data.to+" is not connected to the server. ");
+    writeInServerLog("[Answer-2] From "+connection.username+"@"+connection.ipAddress+" to "+data.to+" is not connected to the server. ");
     sendErrorMessage(connection, "answer", "Error: "+data.to+"is not connected to the server. ");
   }
 }
@@ -307,9 +296,9 @@ function removeElementInArray(array, ipAddress){
 }
 
 function leave(connection, data){
-  console.log(getTimestamp()+" [Leave-1] "+connection.username+" is disconnecting from "+data.to);
-  writeInServerLog("[Leave-1] "+connection.username+" is disconnecting from "+data.to);
-  //:TODO:GOVIN:2020-02-20:Add the message in a log file
+  console.log(getTimestamp()+" [Leave-1] "+connection.username+"@"+connection.ipAddress+" is disconnecting from "+data.to);
+  writeInServerLog("[Leave-1] "+connection.username+"@"+connection.ipAddress+" is disconnecting from "+data.to);
+
 
   if(data.to != null){
       var conn = users[data.to];
@@ -324,7 +313,6 @@ function leave(connection, data){
           to: data.to+"@"+conn.ipAddress
         };
         sendTo(conn, message);
-        //:TODO:GOVIN:2020-02-20:Add the message in a log file
         console.log(getTimestamp()+" [Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
         writeInServerLog("[Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
       }else{
@@ -332,7 +320,6 @@ function leave(connection, data){
         writeInServerLog("[Leave-4] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to remote "+data.to);
       }
   }else{
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     console.log(getTimestamp()+" [Leave-3] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to recipient "+data.to);
     writeInServerLog("[Leave-3] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to recipient "+data.to);
   }
@@ -340,13 +327,13 @@ function leave(connection, data){
 
 function sendCandidateTo(connection, data){
   if(data.to == null){
-    console.log(getTimestamp()+" [Candidate-0]"+connection.username+" trying to send candidate to null. ");
-    writeInServerLog("[Candidate-0]"+connection.username+" trying to send candidate to null. ");
+    console.log(getTimestamp()+" [Candidate-0] "+connection.username+"@"+connection.ipAddress+" trying to send candidate to null. ");
+    writeInServerLog("[Candidate-0] "+connection.username+"@"+connection.ipAddress+" trying to send candidate to null. ");
     sendErrorMessage(connection, "candidate", "Null recipient. ");
     return;
   }
-  console.log(getTimestamp()+" [Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
-  writeInServerLog("[Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
+  console.log(getTimestamp()+" [Candidate-1] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to);
+  writeInServerLog("[Candidate-1] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to);
 
   var conn = users[data.to];
 
@@ -358,13 +345,13 @@ function sendCandidateTo(connection, data){
       candidate: data.candidate
     };
     sendTo(conn, message);
-    console.log(getTimestamp()+" [Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
-    writeInServerLog("[Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
+    console.log(getTimestamp()+" [Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to+"@"+conn.ipAddress);
+    writeInServerLog("[Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to+"@"+conn.ipAddress);
 
   }else{
 
-      console.log("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
-      writeInServerLog("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
+      console.log("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+data.to+"@"+conn.ipAddress+"]");
+      writeInServerLog("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+data.to+"@"+conn.ipAddress+"]");
   }
 }
 
@@ -378,8 +365,8 @@ function getUserList(){
 }
 
 function refuse(connection, data){
-  console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
-  writeInServerLog("[Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
+  console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+"@"+connection.ipAddress+" to: "+ data.to);
+  writeInServerLog("[Refuse-1] Sending refuse from "+connection.username+"@"+connection.ipAddress+" to: "+ data.to);
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
@@ -411,7 +398,6 @@ wss.on('connection', function(connection) {
 
   console.log("[ON-Connection-Event] Connection incoming... ");
   writeInServerLog("[ON-Connection-Event] Connection incoming... ");
-  //:TODO:GOVIN:2020-02-20:Add to log information on the connection
 
   //:COMMENT:GOVIN:2020-02-20:onmessage event for the connection.
   connection.on('message', function(incoming_message) {
@@ -427,7 +413,7 @@ wss.on('connection', function(connection) {
     }
 
     if(data === HEARTBEAT_MESSAGE){
-      writeInServerLog("[HEARTBEAT] Received from "+connection.ipAddress);
+      writeInServerLog("[HEARTBEAT] Received from "+connection.username+"@"+connection.ipAddress);
       heartbeat(connection);
       return;
     }
@@ -508,11 +494,10 @@ wss.on('connection', function(connection) {
             conn.otherAddresses = removeElementInArray(conn.otherAddresses, ipAddress);
             var message = {
                           type: "leave",
-                          from: connection.username+"@"+connection.ipAddress,
+                          from: connection.username+"@"+ipAddress,
                           to: data.to+"@"+conn.ipAddress
                         };
             sendTo(conn, message);
-            //:TODO:GOVIN:2020-02-20:Add the message in a log file
             console.log(getTimestamp()+" [Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
             writeInServerLog("[Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
           }

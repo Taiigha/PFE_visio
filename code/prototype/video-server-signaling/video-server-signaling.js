@@ -347,7 +347,6 @@ function initRemoteEvent() {
       {
         console.log("Answer done");
         currentAnswer = JSON.stringify(remote.localDescription);
-        //:TODO:GOVIN:2020-03-12:Manage many users
         sendAnswer(currentAnswer, recipients[0]);
       }
     }
@@ -455,7 +454,6 @@ function createConnectionToSignalingServer(address, port, username) {
     } catch (e) {
       trackExecution("ERR : Invalid JSON");
       data = {};
-      //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     }
 
     if(data == HEARTBEAT_MESSAGE){
@@ -466,7 +464,8 @@ function createConnectionToSignalingServer(address, port, username) {
     switch (data.type) {
       case "offer":
         trackExecution("Offer : ");
-        //:GLITCH:GOVIN:2020-02-20:Better user management required
+
+        //:COMMENT:GOVIN:2020-02-20: Multiple user management might be here
         recipients = [];
         recipients.push(data.from.split("@")[1]);
         console.log("Received offer from "+data.from);
@@ -489,7 +488,8 @@ function createConnectionToSignalingServer(address, port, username) {
 
       case "answer":
         trackExecution("Answer : ");
-        //:GLITCH:GOVIN:2020-02-20:Awful to change
+
+        //:COMMENT:GOVIN:2020-02-20:currentAnswer is a global variable which can be used to retrieve the answer
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
         remoteUsername = data.from.split("@")[0]
@@ -569,7 +569,6 @@ function loginSignalingServer(username) {
 function connectToSignalingServer() {
   trackExecution("CALL : connectToSignalingServer");
 
-  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
   //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
   if((connSignalingServer != null) && (connSignalingServer.readyState != 3))
