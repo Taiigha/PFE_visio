@@ -1,15 +1,14 @@
-
 var tracks = [];
 
 var conf ={iceServers: [
-  {urls: "stun:stun.l.google.com:19302"}/*,
-  //{url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
-]
+    {urls: "stun:stun.l.google.com:19302"}/*,
+  {url: "turn:numb.viagenie.ca", credential: "webrtcdemo", username: "louis%40mozilla.com"}*/ //TURN Server, uncomment if necessary. Usable for development purpose only.
+  ]
 };
 
 var opt = {optional: [
-  {DtlsSrtpKeyAgreement: true}
-]
+    {DtlsSrtpKeyAgreement: true}
+  ]
 };
 
 var jsonExec = "";
@@ -27,62 +26,358 @@ var connSignalingServer = null;
 var recipients = [];
 
 var username;
-var remoteusername;
+var remoteUsername;
 
 var currentAnswer = null, currentOffer = null;
 
 var isAVideoCall = false;
 
+var isNegotiating = false;
+
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+
 
 const HEARTBEAT_MESSAGE = "--heartbeat--";
 const HEARTBEAT_TIMEOUT = 30000;
 const HEARTBEAT_INTERVAL_TIME = 10000;
 
+document.onload = function() {
+  trackExecution("Document totally loaded");
+}
 
-document.onload = function(){
-  trackExecution("finish");
-  document.getElementById("username").value = "Me";
+function getTimestamp() {
+  var date = new Date(Date.now());
+  var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
+  + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
+  return timestamp;
+}
+
+function trackExecution(data) {
+  if(debug)
+  {
+    if(perf)
+    {
+      //:TODO:ROUX:2020-02-25:add some information about performance
+    }
+    console.log(getTimestamp() + "  " + data);
+    jsonExec = jsonExec + '\n' + data;
+  }
 }
 
 function error(err, msg) {
   trackExecution("ERR : " + err + " : " + msg);
+
   document.getElementById("alert").textContent = err + " : " + msg;
   document.getElementById("alert").style.display = "block";
 }
 
-function wantToHangUp(){
+function changePage(page) {
+  document.getElementById("alert").style.display = "none";
+
+  if(page === "call")
+  {
+    document.getElementById("connectToSignalingServer").style.display = "none";
+    document.getElementById("inCommunication").style.display = "none";
+    document.getElementById("call").style.display = "block";
+  }
+  else if(page === "inCommunication")
+  {
+    document.getElementById("endCon").style.display = "none";
+    document.getElementById("call").style.display = "none";
+    document.getElementById("inCommunication").style.display = "block";
+  }
+}
+
+function sendMessageToSignalingServer(message) {
+  trackExecution("CALL : sendMessageToSignalingServer");
+
+  if(connSignalingServer != null)
+    connSignalingServer.send(JSON.stringify(message));
+  else
+    error("Connection : No connection to signaling server");
+}
+
+function stopStreamedVideo(videoElem) {
+  if(videoElem == null)
+  {
+    trackExecution("stopStreamedVideo: videoElem is null.");
+    return;
+  }
+
+  const stream = videoElem.srcObject;
+
+  if(stream == null)
+    trackExecution("stopStreamedVideo: no stream assigned to component.");
+  else
+  {
+    const tracks = stream.getTracks();
+    tracks.forEach(function(track) {
+      track.stop();
+    });
+  }
+
+  videoElem.srcObject = null;
+}
+
+function hangUp(comment) {
+  //:TODO:ROUX:send a debug message to server.
+  trackExecution("HangUp function.");
+
+  document.getElementById("endCon").style.display = "block";
+  document.getElementById("endCon").textContent = "Fin de communcation avec : " + recipients + ". " + comment;
+  console.log(jsonExec);
+  document.getElementById("hangUpButton").disabled = true;
   changePage("call");
-  trackExecution('CALL : wantToHangUp');
+
+  if(local != null)
+    trackExecution("HangUp: local is null.");
+  else
+  {
+    local.close();
+    local = null;
+  }
+
+  if(remote == null)
+    trackExecution("HangUp: remote is null.");
+  else
+  {
+    remote.close();
+    remote = null;
+  }
+
+  recipients = [];
+  stopStreamedVideo(document.getElementById("sendVideo"));
+  stopStreamedVideo(document.getElementById("receiveVideo"));
+
+  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed with the RTCPeerConnection
+  dataChannel1 = null;
+  dataChannel2 = null;
+}
+
+function wantToHangUp(comment) {
+  changePage("call");
+
+  trackExecution("CALL : wantToHangUp");
+
   console.log(recipients);
-  recipients.forEach(user => {
+
+  recipients.forEach(function(user) {
     var message = {
       type: "leave",
-      from: my_username,
-      to: user
+      //from: my_username,
+      from: username,
+      to: user,
+      comment : comment
     };
+
     console.log(message);
-    console.log(message);
+
     sendMessageToSignalingServer(message);
   });
 
-
   message = {
     type: "logs",
-    from: my_username,
+    from: username,
     to: recipients,
     logs: jsonExec
   };
+
   sendMessageToSignalingServer(message);
-  hangUp();
+  hangUp("Vous avez raccroché.");
 }
 
+function sendOffer(offer, recipient) {
+  trackExecution("CALL : sendOffer");
 
-function initPeers(){
-  trackExecution('CALL : init');
-  document.getElementById('hangUpButton').disabled = false;
-  //$("#hangUpButton").prop("disabled", false);
+  if(offer == null)
+  {
+    trackExecution("Offer is null while trying to send it.");
+    return;
+  }
+
+  trackExecution("Sending offer through signaling server...");
+
+  var message = {
+    type:"offer",
+    to:recipient,
+    offer: offer,
+    videoCall: isAVideoCall
+  }
+
+  sendMessageToSignalingServer(message);
+
+  recipients.push(recipient);
+}
+
+function bindVideoWithStream(video, stream) {
+  trackExecution("CALL : bindVideoWithStream");
+
+  video.srcObject = stream;
+
+  video.onloadedmetadata = function(e) {
+    video.play();
+  };
+}
+
+function initLocalEvent() {
+  if(local == null)
+  {
+    trackExecution("Local RTCPeerConnection is null.");
+    return;
+  }
+
+  local.onsignalingstatechange = function(e) {  // Workaround for Chrome: skip nested negotiations
+      isNegotiating = (local.signalingState != "stable");
+  }
+
+  local.onicecandidate = function(e) {
+    if(local != null)
+    {
+      trackExecution("EVENT : local.onicecandidate : " + local.localDescription);
+
+      if(e.candidate == null)
+      {
+        trackExecution("Offer done");
+
+        currentOffer = JSON.stringify(local.localDescription);
+        var recipient = document.getElementById("recipient").value;
+
+        if(recipient == null)
+        {
+          console.log("createOffer[local.onicecandidate]: recipient is null.");
+          return;
+        }
+
+        sendOffer(currentOffer, recipient);
+
+        changePage("inCommunication");
+      }
+    }
+  };
+
+  local.ontrack = function(e) {
+    if(local != null)
+    {
+      trackExecution("EVENT : local.ontrack : " + local.getTracks);
+
+      var receiveVideo = document.getElementById("receiveVideo");
+      var stream = null;
+
+      if (e.streams && e.streams[0])
+      {
+        trackExecution(e.streams[0]);
+        trackExecution(e.streams[0].getTracks());
+
+        stream = e.streams[0];
+
+        bindVideoWithStream(receiveVideo, stream);
+      }
+    }
+  };
+
+  local.onconnectionstatechange = function(e) {
+    if(local != null)
+    {
+      trackExecution("EVENT : local.onconnectionstatechange : " + local.connectionState);
+
+      if(local.connectionState === "connected")
+          trackExecution("Local connected");
+    }
+  };
+
+  local.oniceconnectionstatechange = function(e) {
+    if(local != null)
+    {
+      trackExecution("EVENT : local.oniceconnectionstatechange : " + local.iceConnectionState );
+
+      if(local.iceConnectionState === "connected")
+        trackExecution("Local connected (ICE)");
+    }
+  };
+}
+
+function sendAnswer(answer, recipient) {
+  trackExecution("CALL : sendAnswer");
+
+  if(answer == null)
+  {
+    trackExecution("Answer is null while trying to send it.");
+    return;
+  }
+
+  trackExecution("Sending answer through signaling server...");
+
+  var message = {
+    type:"answer",
+    to:recipient,
+    answer: answer
+  }
+
+  sendMessageToSignalingServer(message);
+}
+
+function initRemoteEvent() {
+  if(remote == null)
+  {
+    trackExecution("Remote RTCPeerConnection is null.");
+    return;
+  }
+
+  remote.ontrack = function(e) {
+    if(remote != null)
+    {
+      trackExecution("EVENT : remote.ontrack : " + remote.getTracks);
+
+      var receiveVideo = document.getElementById("receiveVideo");
+      var stream = null;
+
+      if (e.streams && e.streams[0])
+        stream = e.streams[0];
+
+      bindVideoWithStream(receiveVideo, stream);
+    }
+  };
+
+  remote.onicecandidate = function(e) {
+    if(remote != null) {
+      trackExecution("EVENT : remote.onicecandidate : " + remote.localDescription);
+
+      if(e.candidate == null)
+      {
+        console.log("Answer done");
+        currentAnswer = JSON.stringify(remote.localDescription);
+        //:TODO:GOVIN:2020-03-12:Manage many users
+        sendAnswer(currentAnswer, recipients[0]);
+      }
+    }
+  };
+
+  remote.onconnectionstatechange = function(e) {
+    if(remote != null)
+    {
+      trackExecution("EVENT : remote.onconnectionstatechange : " + remote.connectionState);
+
+      if(remote.connectionState === "connected")
+        trackExecution("Remote connected");
+    }
+  };
+
+  remote.oniceconnectionstatechange = function(e) {
+    if(remote != null)
+    {
+      trackExecution("EVENT : remote.oniceconnectionstatechange : " + remote.iceConnectionState);
+
+      if(remote.iceConnectionState === "connected")
+        trackExecution("Remote connected (ice)");
+    }
+  };
+}
+
+function initPeers() {
+  trackExecution("CALL : init");
+
+  document.getElementById("hangUpButton").disabled = false;
   local = new RTCPeerConnection(conf, opt);
   remote = new RTCPeerConnection(conf, opt);
 
@@ -90,109 +385,58 @@ function initPeers(){
   initRemoteEvent();
 }
 
-function call(videoNeeded){
-  var address = document.getElementById("recipient").value
+function testDevices(callback, videoNeeded) {
+  trackExecution("CALL : testDevices");
+
+  var isAudioAvailable = false, isVideoAvailable = false;
+
+  //Test if audio and video devices are availables
+  navigator.mediaDevices.enumerateDevices().then(function(devices) {
+    devices.forEach(function(device) {
+      if(device.kind === "audioinput")
+        isAudioAvailable = true;
+      if(device.kind === "videoinput" && videoNeeded)
+        isVideoAvailable = true;
+    });
+
+    callback(isAudioAvailable, isVideoAvailable);
+  }).catch(function(err) {
+    document.getElementById("alert").textContent = err.name + " : " + err.message;
+    trackExecution("ERR : " + err.name + " : " + err.message);
+  });
+}
+
+function call(videoNeeded) {
+  document.getElementById("endCon").style.display = "none";
+
+  var address = document.getElementById("recipient").value;
+
   if ((address != "") && (ipV4Regex.test(address) || ipV6Regex.test(address)))
   {
-    changePage("inCommunication");
-    trackExecution("Call function. ");
+    trackExecution("Call function.");
     initPeers();
     isAVideoCall = videoNeeded;
     testDevices(createOffer, videoNeeded);
   }
   else
   {
-    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP ou l'adresse IP a un format incorrect";
+    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP ou l'adresse IP a un format incorrect.";
     document.getElementById("alert").style.display = "block";
   }
-
 }
 
-function hangUp(){
+function receivedAnswer(answer) {
+  trackExecution("CALL : receivedAnswer");
 
-  //:TODO:ROUX:send a debug message to server.
-  document.getElementById("endCon").style.display = "block";
-  trackExecution("HangUp function. ");
-  console.log(jsonExec);
-  document.getElementById('hangUpButton').disabled = true;
-  changePage("call");
-  //$("#hangUpButton").prop("disabled", true);
-
-  if(local != null){
-    trackExecution("HangUp: local is null. ");
-  }else{
-    local.close();
-    local = null;
-  }
-
-
-
-  if(remote == null){
-    trackExecution("HangUp: remote is null. ");
-  }else{
-    remote.close();
-    remote = null;
-  }
-
-
-  stopStreamedVideo(document.getElementById('sendVideo'));
-  stopStreamedVideo(document.getElementById('receiveVideo'));
-
-  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed when closing the RTCPeerConnection
-  dataChannel1 = null;
-  dataChannel2 = null;
-
+  local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
+    error(err.name, err.message);
+  });
 }
 
+function createConnectionToSignalingServer(address, port, username) {
+  trackExecution("CALL : createConnectionToSignalingServer");
+  trackExecution("Connection to "+ address +" on port "+ port +".");
 
-function connectToSignalingServer(){
-
-  trackExecution('CALL : connectToSignalingServer');
-
-  //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
-  if(connSignalingServer != null && connSignalingServer.readyState != 3){
-
-    if(connSignalingServer.readyState == 1)
-      trackExecution("Already connected to a signaling server. ");
-    return;
-  }
-  var address = document.getElementById("url").value;
-  var port = document.getElementById("port").value;
-  username = document.getElementById("username").value;
-
-  //Regex match
-  if(!(address == null || address == "") && !(port == null || port == ""))
-  {
-    connSignalingServer = createConnectionToSignalingServer(address, port, username);
-    connSignalingServer.onopen = e => {
-      trackExecution('Socket connection opened properly');
-      loginSignalingServer(username);
-    }
-  }else{
-    trackExecution("Paramêtres manquants pour effectuer la connexion. ");
-  }
-}
-
-function loginSignalingServer(username){
-  var message = {
-    type: "login",
-    username: username
-  };
-
-  sendMessageToSignalingServer(message);
-}
-
-function heartbeat(ws) {
-  clearTimeout(ws.heartbeatTimeout);
-  ws.heartbeatTimeout = setTimeout(() => {
-    window.alert("La connexion avec le serveur SIGNALING a été perdue. ")
-    ws.close();
-  }, HEARTBEAT_TIMEOUT);
-}
-
-function createConnectionToSignalingServer(address, port, username){
-  trackExecution('CALL : createConnectionToSignalingServer');
-  trackExecution("Connection to "+ address +" on port "+ port +". ");
   var ws = new WebSocket("ws://"+address+":"+port)
 
   ws.hertbeatInterval = setInterval(() => {
@@ -220,21 +464,21 @@ function createConnectionToSignalingServer(address, port, username){
     }
 
     switch (data.type) {
-
       case "offer":
         trackExecution("Offer : ");
-
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         recipients = [];
-        recipients.push(data.from.split("@")[1])
+        recipients.push(data.from.split("@")[1]);
         console.log("Received offer from "+data.from);
-        if(confirm(data.from + " vous appelle. Souhaitez-vous répondre ?")){
+        if (confirm(data.from + " vous appelle. Souhaitez-vous répondre ?"))
+        {
           changePage("inCommunication");
           currentOffer = data.offer;
-          remoteusername = data.from.split("@")[0]
-          testDevices(receivedOffer, data.videoCall); //:TODO:JCAMY:2020-15-03:is video needed ?
+          remoteUsername = data.from.split("@")[0];
+          testDevices(receivedOffer, data.videoCall);
         }
-        else {
+        else
+        {
           var message = {
             type:"refuse",
             to:recipients
@@ -245,11 +489,10 @@ function createConnectionToSignalingServer(address, port, username){
 
       case "answer":
         trackExecution("Answer : ");
-        //console.log(data);
-
+        //:GLITCH:GOVIN:2020-02-20:Awful to change
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
-        remoteusername = data.from.split("@")[0]
+        remoteUsername = data.from.split("@")[0]
         receivedAnswer(currentAnswer);
         break;
 
@@ -268,24 +511,28 @@ function createConnectionToSignalingServer(address, port, username){
           changePage("call");
           document.getElementById("info").textContent = "Vous êtes connecté en tant que : " + data.to;
           document.getElementById("info").style.display = "block";
-        }else{
+        }
+        else
+        {
           connSignalingServer.close();
           connSignalingServer = null;
           error("Login", "Error while trying to login");
         }
-
         break;
 
       case "leave":
         trackExecution("Leave : ");
         trackExecution(data);
-        hangUp();
+        hangUp(data.comment);
         break;
 
       case "refuse":
-        console.log("refuse")
-        window.alert("Votre correspondant a refusé l'appel");
-        changePage("call");
+        hangUp("Votre correspondant a refusé l'appel.");
+        break;
+
+      case "error":
+        if(data.errorType === "offer")
+          hangUp("Erreur : L'adresse IP que vous essayez d'appeler n'est pas connectée.");
         break;
 
       default:
@@ -302,226 +549,56 @@ function createConnectionToSignalingServer(address, port, username){
     trackExecution("Connection closed...");
   };
 
-  ws.onerror = function(err){
+  ws.onerror = function(err) {
     console.error("Error while connecting to WebSocket : ", err);
     error("Error while connecting to WebSocket", err );
   };
 
   return ws;
 }
-function sendMessageToSignalingServer(message){
-  trackExecution('CALL : sendMessageToSignalingServer');
-  if(connSignalingServer != null){
-    connSignalingServer.send(JSON.stringify(message));
-  }else{
-    error("Connection : No connection to signaling server" );
-  }
 
-}
-
-function sendOffer(offer, recipient){
-  trackExecution('CALL : sendOffer');
-  if(offer == null){
-    trackExecution("Offer is null while trying to send it. ");
-    return;
-  }
-
-  trackExecution("Sending offer through signaling server... ");
+function loginSignalingServer(username) {
   var message = {
-    type:"offer",
-    to:recipient,
-    offer: offer,
-    videoCall: isAVideoCall
-  }
-  sendMessageToSignalingServer(message);
-  recipients.push(recipient);
-}
+    type: "login",
+    username: username
+  };
 
-function sendAnswer(answer, recipient){
-  trackExecution('CALL : sendAnswer');
-  if(answer == null){
-    trackExecution("Answer is null while trying to send it. ");
-    return;
-  }
-  trackExecution("Sending answer through signaling server... ");
-  var message = {
-    type:"answer",
-    to:recipient,
-    answer: answer
-  }
   sendMessageToSignalingServer(message);
 }
 
-var isNegotiating = false;
-function initLocalEvent() {
-  if(local == null){
-    trackExecution("Local RTCPeerConnection is null. ");
+function connectToSignalingServer() {
+  trackExecution("CALL : connectToSignalingServer");
+
+  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
+
+  //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
+  if((connSignalingServer != null) && (connSignalingServer.readyState != 3))
+  {
+    if(connSignalingServer.readyState == 1)
+      trackExecution("Already connected to a signaling server.");
     return;
   }
 
-  local.onsignalingstatechange = (e) => {  // Workaround for Chrome: skip nested negotiations
-      isNegotiating = (local.signalingState != "stable");
-  }
+  var address = document.getElementById("url").value;
+  var port = document.getElementById("port").value;
+  username = document.getElementById("username").value;
 
-  local.onicecandidate = function(e) {
-    if(local != null) {
-      trackExecution('EVENT : local.onicecandidate : ' + local.localDescription);
-      //console.log(e.candidate);
-      if(e.candidate == null) {
-        trackExecution("Offer done");
-        //console.log(JSON.stringify(local.localDescription));
-        currentOffer = JSON.stringify(local.localDescription);
-
-        var recipient = document.getElementById("recipient").value;
-        if(recipient == null){
-          console.log("createOffer[local.onicecandidate]: recipient is null. ");
-          return;
-        }
-        sendOffer(currentOffer, recipient);
-      }
-    }
-  };
-
-  local.ontrack = function(e){
-    if(local != null) {
-      trackExecution('EVENT : local.ontrack : ' + local.getTracks);
-      var receiveVideo = document.getElementById('receiveVideo');
-      var stream = null;
-
-      if (e.streams && e.streams[0]) {
-        trackExecution(e.streams[0]);
-        trackExecution(e.streams[0].getTracks());
-        stream = e.streams[0];
-        bindVideoWithStream(receiveVideo, stream);
-      }
-    }
-  };
-
-  local.onconnectionstatechange = function(e) {
-    if(local != null) {
-      trackExecution('EVENT : local.onconnectionstatechange : ' + local.connectionState);
-      // console.log(local.connectionState);
-      if(local.connectionState === "connected"){
-          trackExecution("Local connected");
-      }
-    }
-  };
-
-  local.oniceconnectionstatechange = function(e) {
-    if(local != null) {
-      trackExecution('EVENT : local.oniceconnectionstatechange : ' + local.iceConnectionState );
-      // console.log(local.iceConnectionState);
-      if(local.iceConnectionState === "connected")
-        trackExecution("Local connected (ICE)");
-    }
-  };
-}
-
-function initRemoteEvent() {
-  if(remote == null){
-    trackExecution("Remote RTCPeerConnection is null. ");
-    return;
-  }
-
-  remote.ontrack = function(e){
-    if(remote != null) {
-      trackExecution('EVENT : remote.ontrack : ' + remote.getTracks);
-      var receiveVideo = document.getElementById('receiveVideo');
-      //var receiveVideo = $("#receiveVideo")[0];
-      var stream = null;
-
-      if (e.streams && e.streams[0]) {
-        stream = e.streams[0];
-      }
-      bindVideoWithStream(receiveVideo, stream);
-    }
-  };
-
-  remote.onicecandidate = function(e) {
-    if(remote != null){
-      trackExecution('EVENT : remote.onicecandidate : ' + remote.localDescription);
-      //console.log(e.candidate);
-      if(e.candidate == null)  {
-        console.log("Answer done");
-        //console.log(JSON.stringify(remote.localDescription));
-        currentAnswer = JSON.stringify(remote.localDescription);
-        //:TODO:GOVIN:2020-03-12:Manage many users
-        sendAnswer(currentAnswer, recipients[0]);
-      }
-    }
-  };
-
-
-  remote.onconnectionstatechange = function(e) {
-    if(remote != null){
-      trackExecution('EVENT : remote.onconnectionstatechange : ' + remote.connectionState);
-      // console.log(remote.connectionState);
-      if(remote.connectionState === "connected"){
-        trackExecution("Remote connected");
-      }
-    }
-  };
-
-
-  remote.oniceconnectionstatechange = function(e) {
-    if(remote != null)
-    {
-      trackExecution('EVENT : remote.oniceconnectionstatechange : ' + remote.iceConnectionState);
-      // console.log(remote.iceConnectionState);
-      if(remote.iceConnectionState === "connected")
-        trackExecution("Remote connected (ice)");
-    }
-  };
-}
-
-function bindVideoWithStream(video, stream){
-  trackExecution('CALL : bindVideoWithStream');
-  video.srcObject = stream;
-
-  video.onloadedmetadata = function(e) {
-    video.play();
-  };
-}
-
-function stopStreamedVideo(videoElem) {
-  if(videoElem == null){
-    trackExecution("stopStreamedVideo: videoElem is null. ");
-    return;
-  }
-
-  const stream = videoElem.srcObject;
-  if(stream == null){
-    trackExecution("stopStreamedVideo: no stream assigned to component. ");
-  }else{
-    const tracks = stream.getTracks();
-    tracks.forEach(function(track) {
-      track.stop();
-    });
-  }
-
-  videoElem.srcObject = null;
-}
-
-function sendMessage(){
-  trackExecution('CALL : sendMessage');
-  var text = document.getElementById("textToSend").value;
-
-  if(text != "") {
-    showMessage(text, username); //TODO:JCAMY:Replace it with real username
-
-    document.getElementById("textToSend").value = "";
-
-    if (dataChannel1 != null) {
-      dataChannel1.send(text);
-    }
-    if (dataChannel2 != null) {
-      dataChannel2.send(text);
+  //Regex match
+  if(!(address == null || address == "") && !(port == null || port == ""))
+  {
+    connSignalingServer = createConnectionToSignalingServer(address, port, username);
+    connSignalingServer.onopen = function(e) {
+      trackExecution("Socket connection opened properly");
+      loginSignalingServer(username);
     }
   }
+  else
+    trackExecution("Paramêtres manquants pour effectuer la connexion.");
 }
 
 function showMessage(data, username) {
-  trackExecution('CALL : showMessage');
+  trackExecution("CALL : showMessage");
+
   var date = new Date();
   var log = document.createElement('p');
   var logValue = document.createTextNode(username + "[" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "] : " + data);
@@ -530,54 +607,52 @@ function showMessage(data, username) {
   document.getElementById("chatbox").appendChild(log);
 }
 
-function testDevices(callback, videoNeeded) {
-  trackExecution('CALL : testDevices');
-  var isAudioAvailable = false, isVideoAvailable = false;
-  //Test if audio and video devices are availables
-  navigator.mediaDevices.enumerateDevices().then(function(devices) {
-    devices.forEach(function(device) {
-      if(device.kind === "audioinput")
-      isAudioAvailable = true;
-      if(device.kind === "videoinput" && videoNeeded)
-      isVideoAvailable = true;
-    });
-    callback(isAudioAvailable, isVideoAvailable);
-  })
-  .catch(function(err) {
-    document.getElementById("alert").textContent = err.name + " : " + err.message;
-    trackExecution("ERR : " + err.name + " : " + err.message);
-  });
+function sendMessage() {
+  trackExecution("CALL : sendMessage");
+
+  var text = document.getElementById("textToSend").value;
+
+  if(text != "")
+  {
+    showMessage(text, username);
+
+    document.getElementById("textToSend").value = "";
+
+    if (dataChannel1 != null)
+      dataChannel1.send(text);
+
+    if (dataChannel2 != null)
+      dataChannel2.send(text);
+  }
 }
 
-function setUpDataChannel(dataChannel, username){
-  trackExecution('CALL : setUpDataChannel');
+function setUpDataChannel(dataChannel, username) {
+  trackExecution("CALL : setUpDataChannel");
+
   dataChannel.onopen = function(event) {
-    dataChannel.send(username + " connected to chatbox");
+    dataChannel.send("connected to chatbox");
   }
 
   dataChannel.onmessage = function(event) {
-    showMessage(event.data, remoteusername);
+    showMessage(event.data, remoteUsername);
   }
 
-  dataChannel.onclose = function(event){
-    showMessage("Has disconneted. ", username)
+  dataChannel.onclose = function(event) {
+    showMessage("Has disconneted.", username)
   }
 }
 
-
 function createOffer(isAudioAvailable, isVideoAvailable) {
-  trackExecution('CALL : createOffer');
+  trackExecution("CALL : createOffer");
 
-  if(isVideoAvailable){
+  /* Configuration video
+  if(isVideoAvailable)
+  {
     isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
-  }
+  }*/
+
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable , video: isVideoAvailable }).then(function(stream) {
-  // navigator.mediaDevices.getUserMedia({
-  //   audio: {
-  //     sampleSize: 16
-  //   }
-  // }).then(function(stream) {
 
     //Retrieve tracks
     tracks =  stream.getTracks();
@@ -586,8 +661,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
     }
 
     //::GOVIN:2020-02-20:Binding stream with sendVideo element
-    var video = document.getElementById('sendVideo');
-    //var video = $("#sendVideo")[0];
+    var video = document.getElementById("sendVideo");
     video.srcObject = stream;
 
     video.onloadedmetadata = function(e) {
@@ -596,11 +670,10 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
 
     //Create datachannel
     dataChannel1 = local.createDataChannel("dc1", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel1, "sender");
-
+    setUpDataChannel(dataChannel1, username);
 
     //Create offer
-    local.createOffer().then(function(offer) {
+    local.createOffer({offerToReceiveVideo: true}).then(function(offer) {
       return local.setLocalDescription(offer).catch(function (err) {
         error(err.name, err.message);
       });
@@ -613,31 +686,44 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
   });
 }
 
-function receivedOffer(isAudioAvailable, isVideoAvailable){
-  trackExecution('CALL : receivedOffer');
+function recipientError() {
+  recipients.forEach(function(user) {
+    var message = {
+      type: "leave",
+      from: username,
+      to: user,
+      comment : "Votre correspondant a rencontré une erreur."
+    };
+
+    console.log(message);
+
+    sendMessageToSignalingServer(message);
+  });
+
+  hangUp("Une erreur s'est produite.");
+}
+
+function receivedOffer(isAudioAvailable, isVideoAvailable) {
+  trackExecution("CALL : receivedOffer");
+
   initPeers();
   var offer = currentOffer;
 
-  if(isVideoAvailable){
-    isVideoAvailable = "width: " + document.getElementById("width") + ", height: " + document.getElementById("height") + ", frameRate: { min:" + document.getElementById("minframeRate") + ", max: " + document.getElementById("maxframeRate") + "}}"
+  if(isVideoAvailable)
+  {
+    isVideoAvailable = "width: " + document.getElementById("width").value + ", height: " + document.getElementById("height").value + ", frameRate: { min:" + document.getElementById("minFrameRate").value + ", max: " + document.getElementById("maxFrameRate").value + "}}"
   }
 
   navigator.mediaDevices.getUserMedia({ audio: isAudioAvailable, video: isVideoAvailable }).then(function(stream) {
-  // navigator.mediaDevices.getUserMedia({
-  //   audio: {
-  //     sampleSize: 16
-  //   }
-  // }).then(function(stream) {
-    //Retrieve tracks
 
+    //Retrieve tracks
     tracks =  stream.getTracks();
-    for (const track of stream.getTracks()) {
+    for(const track of stream.getTracks()) {
       remote.addTrack(track, stream);
     }
 
     //::GOVIN:2020-02-20:Binding stream with sendVideo element
-    var sendVideo = document.getElementById('sendVideo');
-    //var sendVideo = $("#sendVideo")[0];
+    var sendVideo = document.getElementById("sendVideo");
     sendVideo.srcObject = stream;
 
     sendVideo.onloadedmetadata = function(e) {
@@ -646,70 +732,27 @@ function receivedOffer(isAudioAvailable, isVideoAvailable){
 
     //Create datachannel
     dataChannel2 = remote.createDataChannel("dc2", {negotiated: true, id: 0});
-    setUpDataChannel(dataChannel2, "receiver");
-
+    setUpDataChannel(dataChannel2, username);
 
     //Save remote offer
     remote.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer))).catch(function (err) {
       error(err.name, err.message);
+      recipientError();
     });
 
     //Create answer
     remote.createAnswer().then(function(answer) {
       remote.setLocalDescription(answer).catch(function (err) {
         error(err.name, err.message);
+        recipientError();
       });
     }).catch(function(err) {
       error(err.name, err.message);
+      recipientError();
     });
 
   }).catch(function(err) {
     error(err.name, err.message);
+    recipientError();
   });
-}
-
-function receivedAnswer(answer){
-  trackExecution('CALL : receivedAnswer');
-
-  local.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer))).catch(function (err) {
-    error(err.name, err.message);
-  });
-}
-
-function trackExecution(data)
-{
-  if(debug)
-  {
-    if(perf)
-    {
-      //:TODO:ROUX:2020-02-25:add some information about performance
-    }
-    console.log(getTimestamp()+"  "+data)
-    jsonExec = jsonExec + '\n' + data
-  }
-}
-
-
-function changePage (page){
-  document.getElementById("alert").style.display = "none";
-
-  if(page === "call")
-  {
-    document.getElementById("connectToSignalingServer").style.display = "none";
-    document.getElementById("inCommunication").style.display = "none";
-    document.getElementById("call").style.display = "block";
-  }
-  else if(page === "inCommunication"){
-    document.getElementById("endCon").style.display = "none";
-    document.getElementById("call").style.display = "none";
-    document.getElementById("inCommunication").style.display = "block";
-  }
-}
-
-function getTimestamp(){
-  var timestamp = Date.now();
-  var date = new Date(timestamp);
-  var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
-  + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
-  return timestamp;
 }

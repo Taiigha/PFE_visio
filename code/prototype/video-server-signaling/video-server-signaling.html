@@ -32,7 +32,7 @@
             <h1>WebRTC Visioconference</h1>
             <b-alert style="display:none" id="alert" show variant="danger"></b-alert>
             <b-alert style="display:none" id="info" show variant="info"></b-alert>
-            
+
             <div id="connectToSignalingServer">
 							<b-container fluid>
 						  <b-row class="my-1">
@@ -67,7 +67,8 @@
             </div>
 
 						<div id="call">
-              <b-alert style="display: none" id="endCon" show variant="info" >Fin de communcation</b-alert>
+              <b-alert style="display: none" id="endCon" show variant="info" ></b-alert>
+              <!-- Configuration video
 	            <div id="configuration">
 								<b-container fluid>
 								<b-row class="my-1">
@@ -93,7 +94,7 @@
 										<label for="input-large">Images par seconde max : </label>
 									</b-col>
 									<b-col sm="10">
-										<b-form-input id="port" placeholder="Images par seconde maximum" value="60"></b-form-input>
+										<b-form-input id="maxFramRate" placeholder="Images par seconde maximum" value="60"></b-form-input>
 									</b-col>
 								</b-row>
 
@@ -102,20 +103,24 @@
 										<label for="input-large">Images par seconde min : </label>
 									</b-col>
 									<b-col sm="10">
-										<b-form-input name="minframeRate" id="minframeRate" placeholder="Images par seconde minimum" value="20" ></b-form-input>
+										<b-form-input name="minFrameRate" id="minframeRate" placeholder="Images par seconde minimum" value="20" ></b-form-input>
 									</b-col>
 								</b-row>
 
-								<b-row class="my-1">
-									<b-col sm="2">
-										<label for="input-large">ip de la cible : </label>
-									</b-col>
-									<b-col sm="10">
-										<b-form-input name="recipient" id="recipient" placeholder="192.168.0.0"></b-form-input>
-									</b-col>
-								</b-row>
-							</b-container>
+
 	            </div>
+              -->
+
+              <b-container fluid>
+              <b-row class="my-1">
+                <b-col sm="2">
+                  <label for="input-large">ip de la cible : </label>
+                </b-col>
+                <b-col sm="10">
+                  <b-form-input name="recipient" id="recipient" placeholder="192.168.0.0"></b-form-input>
+                </b-col>
+              </b-row>
+            </b-container>
 	            </br>
 							<div id="buttons" >
 									<b-button variant="success" id="audioCallButton" onclick="call(false)">Appel audio</b-button>
@@ -126,24 +131,21 @@
 						</div>
 
 						<div id="inCommunication" >
-						<b-button variant="danger" id="hangUpButton" onclick="wantToHangUp()">Raccrocher</b-button>
+						<b-button variant="danger" id="hangUpButton" onclick='wantToHangUp("Votre correspondant a raccroché.")'>Raccrocher</b-button>
             <div class="text-info" id="chatbox" style="height:350px; overflow:auto; border: 2px solid #dedede;">
             </div>
             <input type="text" id="textToSend">
             <b-button variant="primary" type="submit" id="sendText" class="btn" onclick="sendMessage()">Envoyer</b-button>
-
-            <div id="send">
-                <h2>Send </h2>
-                <video id="sendVideo" muted>
-                </video>
-            </div>
-
             <div id="receive">
                 <h2>Receive</h2>
                 <video id="receiveVideo">
                 </video>
             </div>
-
+            <div id="send">
+                <h2>Send </h2>
+                <video id="sendVideo" muted>
+                </video>
+            </div>
 					</div>
         </b-container>
     </div>
