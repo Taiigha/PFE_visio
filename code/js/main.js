@@ -407,7 +407,7 @@ function call(videoNeeded) {
   }
   else
   {
-    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigé d'adresse IP ou l'adresse IP a un format incorrect.";
+    document.getElementById("alert").textContent = "Erreur : Vous n'avez pas renseigné d'adresse IP ou l'adresse IP a un format incorrect.";
     document.getElementById("alert").style.display = "block";
   }
 }
@@ -595,7 +595,7 @@ function connectToSignalingServer() {
     }
   }
   else
-    trackExecution("Paramêtres manquants pour effectuer la connexion.");
+    trackExecution("Connection necessary parameters are missing");
 }
 
 function showMessage(data, username) {

@@ -18,16 +18,16 @@ wscat -c localhost:9090
 */
 const debug = true;
 
-const fs = require('fs');
+const fs = require("fs");
 
-const WebSocketServer = require('ws').Server;
+const WebSocketServer = require("ws").Server;
 
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV4PrefixedRegex = /^::ffff:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
 
-const IPv6FamilyName = 'IPv6';
-const IPv4FamilyName = 'IPv4';
+const IPv6FamilyName = "IPv6";
+const IPv4FamilyName = "IPv4";
 
 const IPv4Prefix = "::ffff:";
 
@@ -101,7 +101,7 @@ function displayUsers() {
 
 function saveTrace(connection, data) {
   console.log("Save trace " + connection.username);
-  fs.writeFileSync(connection.username + '-logs', data.logs);
+  fs.writeFileSync(connection.username + "-logs", data.logs);
 }
 
 function extractIPv4FromIPv6(ipAddress) {
@@ -362,8 +362,8 @@ function leave(connection, data) {
 
         var message = {
           type: "leave",
-          from: connection.username+"@"+connection.ipAddress,
-          to: data.to+"@"+conn.ipAddress
+          from: connection.username + "@" + connection.ipAddress,
+          to: data.to + "@" + conn.ipAddress
         };
         sendTo(conn, message);
         console.log(getTimestamp() + " [Leave-2] " + connection.username + "@" + connection.ipAddress + " sending leaving message to " + data.to);
@@ -419,7 +419,7 @@ function getUserList() {
   user_names = [];
 
   Object.entries(users).forEach(([key, value]) => {
-    user_names.push(value.username+"@"+key);
+    user_names.push(value.username + "@" + key);
   });
 
   return user_names;
@@ -441,8 +441,8 @@ function refuse(connection, data) {
 
     var message = {
       type: "refuse",
-      from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      from: connection.username + "@" + connection.ipAddress,
+      to: data.to + "@" +conn.ipAddress,
       answer: data.answer
     }
 
@@ -464,12 +464,12 @@ function getCurrentDate() {
   return date.getDate() + "-" + (date.getMonth() + 1) + "-" + date.getFullYear();
 }
 
-wss.on('connection', function(connection) {
+wss.on("connection", function(connection) {
   console.log("[ON-Connection-Event] Connection incoming... ");
   writeInServerLog("[ON-Connection-Event] Connection incoming... ");
 
   //onmessage event for the connection.
-  connection.on('message', function(incoming_message) {
+  connection.on("message", function(incoming_message) {
     var data;
     //message shall contain {"type":"something"} and shall be in JSON format
     try {
@@ -590,7 +590,7 @@ wss.on('connection', function(connection) {
   connection.is_alive = true;
   connection.ping_id = 0;
 
-  connection.on('pong', function heartbeat() {
+  connection.on("pong", function heartbeat() {
       console.log(getTimestamp() + " [PONG] " + connection.username + "@" + connection.ipAddress + " is alive (ping id = "+connection.ping_id+").");
       connection.ping_id = 0;
       connection.is_alive = true;
