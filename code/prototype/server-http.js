@@ -36,11 +36,13 @@ const IPv4Prefix = "::ffff:";
 const PING_INTERVAL = 1000;
 const MAX_PING_ID = 5;
 
+const HEARTBEAT_MESSAGE = "--heartbeat--";
+
 const localhostIpAddress = "127.0.0.1";
 
 
 var server_log_stream = fs.createWriteStream("server-logs-"+getCurrentDate(), {flags:'a'});
-var log_queue = "";
+var log_queue = "\n";
 server_log_stream.readyState = 0;
 server_log_stream.on("open", function(){
   server_log_stream.readyState = 1;
@@ -54,9 +56,12 @@ var server_name = "Server Signaling";
 
 console.log("Server started at "+getTimestamp());
 writeInServerLog("Server started at "+getTimestamp());
+
 //:DEBUG:GOVIN:2020-03-12:COMMENTARY
 function displayUsers() {
-  console.log(getUserList());
+  var userList = getUserList();
+  console.log(userList);
+  writeInServerLog("Connected users : "+userList);
 }
 
 if(debug){
@@ -130,18 +135,9 @@ function getUser(username){
     }
   }
 }
-const getMethods = (obj) => {
-  let properties = new Set()
-  let currentObj = obj
-  do {
-    Object.getOwnPropertyNames(currentObj).map(item => properties.add(item))
-  } while ((currentObj = Object.getPrototypeOf(currentObj)))
-  return [...properties.keys()].filter(item => typeof obj[item] === 'function')
-}
+
 
 function login(connection, data){
-//:GLITCH:GOVIN:2020-03-12:MAUVAISE ADRESSE; MAUVAISE SOCKET
-
 
   var address = {
     address: connection._socket.remoteAddress,
@@ -168,9 +164,10 @@ function login(connection, data){
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
   } else {
 
-    //:GLITCH:GOVIN:2020-03-15:If the client is the server and uses localhost to connect to
-    //:GLITCH:GOVIN:2020-03-15:the server, he'll be registred with the localhost so we need to
-    //:GLITCH:GOVIN:2020-03-15:retrieve the IP address from the server
+    //:BUG:GOVIN:2020-03-15:If the client is the server are on the same computer
+    //:BUG:GOVIN:2020-03-15:If the client uses localhost address to connect to the signaling server
+    //:BUG:GOVIN:2020-03-15:the client will be registred with the localhost ip address
+    //:BUG:GOVIN:2020-03-15:no solution found. The client must use the local/public
     if(ipAddress === localhostIpAddress){
 
     }
@@ -196,6 +193,10 @@ function login(connection, data){
 
     //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }
+}
+
+function heartbeat(connection){
+  sendTo(connection, HEARTBEAT_MESSAGE);
 }
 
 function findConnection(recipient){
@@ -313,8 +314,6 @@ function leave(connection, data){
   if(data.to != null){
       var conn = users[data.to];
       //:COMMENT:GOVIN:2020-02-20:Notify other user to close the peerconnection on his side
-      //:TODO:GOVIN:2020-02-20:Manage many users
-
       if(conn != null) {
 
         conn.otherAddresses = removeElementInArray(conn.otherAddresses, connection.ipAddress);
@@ -326,16 +325,16 @@ function leave(connection, data){
         };
         sendTo(conn, message);
         //:TODO:GOVIN:2020-02-20:Add the message in a log file
-        console.log(getTimestamp()+" [Leave-2] Sending leaving message to "+data.to);
-        writeInServerLog("[Leave-2] Sending leaving message to "+data.to);
+        console.log(getTimestamp()+" [Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
+        writeInServerLog("[Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
       }else{
-        console.log(getTimestamp()+" [Leave-4] Error: no connection found for remote "+data.to);
-        writeInServerLog("[Leave-4] Error: no connection found for remote "+data.to);
+        console.log(getTimestamp()+" [Leave-4] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to remote "+data.to);
+        writeInServerLog("[Leave-4] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to remote "+data.to);
       }
   }else{
     //:TODO:GOVIN:2020-02-20:Add the error message in a log file
-    console.log(getTimestamp()+" [Leave-3] Error: no connection found for recipient "+data.to);
-    writeInServerLog("[Leave-3] Error: no connection found for recipient "+data.to);
+    console.log(getTimestamp()+" [Leave-3] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to recipient "+data.to);
+    writeInServerLog("[Leave-3] Error: no connection found from "+connection.username+"@"+connection.ipAddress+" to recipient "+data.to);
   }
 }
 
@@ -348,7 +347,7 @@ function sendCandidateTo(connection, data){
   }
   console.log(getTimestamp()+" [Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
   writeInServerLog("[Candidate-1]"+connection.username+" is sending candidate to : "+data.to);
-  //:TODO:GOVIN:2020-02-20:Add the message in a log file
+
   var conn = users[data.to];
 
   if(conn != null) {
@@ -361,9 +360,9 @@ function sendCandidateTo(connection, data){
     sendTo(conn, message);
     console.log(getTimestamp()+" [Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
     writeInServerLog("[Candidate-2]"+connection.username+" is sending candidate to : "+data.to);
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
+
   }else{
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+
       console.log("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
       writeInServerLog("[Candidate-3] Error : ["+connection.username+ " is sending candidate to : "+data.to+"]");
   }
@@ -381,7 +380,6 @@ function getUserList(){
 function refuse(connection, data){
   console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
   writeInServerLog("[Refuse-1] Sending refuse from "+connection.username+" to: "+ data.to);
-  //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
@@ -400,23 +398,23 @@ function refuse(connection, data){
       to: data.to+"@"+conn.ipAddress,
       answer: data.answer
     }
-    console.log("Refuse" + message + " conn : "+ conn )
+    console.log("[Refuse-2] " + message + " conn : "+ conn)
+    writeInServerLog("[Refuse-2] " + message + " conn : "+ conn);
     sendTo(conn, message);
-    //:TODO:GOVIN:2020-02-20:Add the message in a log file
   }else{
-      console.log("conn ==  NULL")
-    //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+  writeInServerLog("[Refuse-3] connection is null. ");
+      console.log("[Refuse-3] connection is null. ");
   }
 }
 
 wss.on('connection', function(connection) {
 
-  console.log("Connection incoming... ");
+  console.log("[ON-Connection-Event] Connection incoming... ");
+  writeInServerLog("[ON-Connection-Event] Connection incoming... ");
   //:TODO:GOVIN:2020-02-20:Add to log information on the connection
 
   //:COMMENT:GOVIN:2020-02-20:onmessage event for the connection.
   connection.on('message', function(incoming_message) {
-
     var data;
     //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
     try {
@@ -425,7 +423,13 @@ wss.on('connection', function(connection) {
     } catch (e) {
       console.log("Invalid JSON");
       data = {};
-      //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+      writeInServerLog("[ON-MESSAGE-Event] Invalid JSON from "+connection.username+"@"+connection.ipAddress);
+    }
+
+    if(data === HEARTBEAT_MESSAGE){
+      writeInServerLog("[HEARTBEAT] Received from "+connection.ipAddress);
+      heartbeat(connection);
+      return;
     }
 
     switch (data.type) {
@@ -434,32 +438,31 @@ wss.on('connection', function(connection) {
         login(connection, data);
       break;
 
-      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"offer", "to":"other_username", "offer":"offer"}
+      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"offer", "to":"recipient", "offer":"offer", videoCall:isAVideoCall}
       case "offer":
         sendOffer(connection, data);
       break;
 
-      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"answer", "to":"other_username", answer="answer"}
+      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"answer", "to":"recipient", answer="answer"}
       case "answer":
         answer(connection, data);
       break;
 
-      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"candidate", "to":"other_username", "candidate":"candidate"}
+      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"candidate", "to":"recipient", "candidate":"candidate"}
       case "candidate":
         sendCandidateTo(connection, data);
       break;
 
-      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"leave", "to":"other_username"}
+      //:COMMENT:GOVIN:2020-02-20:data Format {"type":"leave", "to":"recipient"}
       case "leave":
         leave(connection, data);
       break;
 
-      //:GLITCH:GOVIN:2020-02-20:Test code to understand, might be a dead code
+      //:COMMENT:GOVIN:2020-02-20:Command sent to retrieved the list of connected users.
       case "list":
-      console.log("List request from "+connection.username);
+      console.log("[List] Connected user list request from "+connection.username+"@"+connection.ipAddress);
       user_names = getUserList();
-      console.log(user_names);
-      //notify the other user so he can disconnect his peer connection
+
       if(connection != null) {
         var message = {
                         type: "user_list",
@@ -498,11 +501,7 @@ wss.on('connection', function(connection) {
 
       if(connection.otherAddresses) {
         for(user in connection.otherAddresses){
-          console.log("####");
-          console.log(user);
           var conn = users[user];
-          //:TODO:GOVIN:2020-02-20:Add the message in a log file
-          //:TODO:GOVIN:2020-02-20:Manage many users
           if(conn != null) {
             console.log(getTimestamp()+" [Close-Connection-Event-2] "+connection.username+"@"+ipAddress+" disconnecting from "+conn.username+"@"+user);
             writeInServerLog("[Close-Connection-Event-2] "+connection.username+"@"+ipAddress+" disconnecting from "+conn.username+"@"+user);
@@ -520,12 +519,10 @@ wss.on('connection', function(connection) {
         }
       }
 
-        //:TODO:GOVIN:2020-02-20:Add the message in a log file
         delete users[ipAddress];
     }else{
-      //:TODO:GOVIN:2020-02-20:Add the message in a log file "anonymous user disconnected"
-      console.log(getTimestamp()+" [Close-Connection-Event-5] Anonymous user has disconnected. ");
-      writeInServerLog("[Close-Connection-Event-5] Anonymous user has disconnected. ");
+      console.log(getTimestamp()+" [Close-Connection-Event-5] Anonymous user "+ipAddress+" has disconnected. ");
+      writeInServerLog("[Close-Connection-Event-5] Anonymous "+ipAddress+" user has disconnected. ");
     }
 
     //:COMMENT:GOVIN:2020-03-26:Ending the ping-pong routine
@@ -552,15 +549,14 @@ wss.on('connection', function(connection) {
     }
     else{
       console.log(getTimestamp()+" [PING] "+connection.username+"@"+connection.ipAddress+" is not alive, closing the socket. ");
+      writeInServerLog(" [PING] "+connection.username+"@"+connection.ipAddress+" is not alive, closing the socket. ");
       connection.emit("close");
     }
     if(connection.ping_id > MAX_PING_ID){
       connection.is_alive = false;
     }
   }, PING_INTERVAL);
-          //:TODO:GOVIN:2020-02-20:Add the message in a log file
 
-  //:GLITCH:GOVIN:2020-02-20:type might be ambiguous or inadequate
   var message = {
               type: "comment",
               comment:"Connection to SIGNALING Server is a success. ",
@@ -588,6 +584,7 @@ function getTimestamp(){
   + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
   return timestamp;
 }
+
 function getCurrentDate(){
   var timestamp = Date.now();
   var date = new Date(timestamp);

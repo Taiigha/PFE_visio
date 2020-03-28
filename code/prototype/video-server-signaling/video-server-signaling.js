@@ -23,42 +23,22 @@ var dataChannel1 = null;
 var dataChannel2 = null;
 
 var connSignalingServer = null;
-//:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
+
 var recipients = [];
-var my_username = "Me";
 
 var username;
 var remoteusername;
 
 var currentAnswer = null, currentOffer = null;
-//:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
-//:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 
 var isAVideoCall = false;
 
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
 
-/*$(document).ready(e => {
-  $("#username").val("Me");
-  $("#url").val("192.168.0.13");
-  $("#port").val("9090");
-
-  //:COMMENT:GOVIN:2020-02-20:Link the #id button on click event with a function
-  $("#connectToSignalingServerButton").on("click", connectToSignalingServer);
-
-  $("#callButton").on("click", call);
-  $("#hangUpButton").on("click", e => {
-    var message = {
-      type: "leave",
-      from: my_username,
-      to: other_username
-    };
-    sendMessageToSignalingServer(message);
-    hangUp();
-  });
-});*/
-
+const HEARTBEAT_MESSAGE = "--heartbeat--";
+const HEARTBEAT_TIMEOUT = 30000;
+const HEARTBEAT_INTERVAL_TIME = 10000;
 
 
 document.onload = function(){
@@ -86,9 +66,6 @@ function wantToHangUp(){
     console.log(message);
     sendMessageToSignalingServer(message);
   });
-
-
-
 
 
   message = {
@@ -161,7 +138,7 @@ function hangUp(){
   stopStreamedVideo(document.getElementById('sendVideo'));
   stopStreamedVideo(document.getElementById('receiveVideo'));
 
-  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed with the RTCPeerConnection
+  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed when closing the RTCPeerConnection
   dataChannel1 = null;
   dataChannel2 = null;
 
@@ -171,8 +148,6 @@ function hangUp(){
 function connectToSignalingServer(){
 
   trackExecution('CALL : connectToSignalingServer');
-
-  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
   //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
   if(connSignalingServer != null && connSignalingServer.readyState != 3){
@@ -184,6 +159,7 @@ function connectToSignalingServer(){
   var address = document.getElementById("url").value;
   var port = document.getElementById("port").value;
   username = document.getElementById("username").value;
+
   //Regex match
   if(!(address == null || address == "") && !(port == null || port == ""))
   {
@@ -206,14 +182,27 @@ function loginSignalingServer(username){
   sendMessageToSignalingServer(message);
 }
 
+function heartbeat(ws) {
+  clearTimeout(ws.heartbeatTimeout);
+  ws.heartbeatTimeout = setTimeout(() => {
+    window.alert("La connexion avec le serveur SIGNALING a été perdue. ")
+    ws.close();
+  }, HEARTBEAT_TIMEOUT);
+}
+
 function createConnectionToSignalingServer(address, port, username){
   trackExecution('CALL : createConnectionToSignalingServer');
   trackExecution("Connection to "+ address +" on port "+ port +". ");
   var ws = new WebSocket("ws://"+address+":"+port)
 
+  ws.hertbeatInterval = setInterval(() => {
+    ws.send(JSON.stringify(HEARTBEAT_MESSAGE));
+  }, HEARTBEAT_INTERVAL_TIME);
+
+
   ws.onmessage = function (evt) {
-    console.log("refuse")
     trackExecution("[Before Processing] Message received = " + evt.data);
+
     var data;
     //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
     try {
@@ -225,11 +214,16 @@ function createConnectionToSignalingServer(address, port, username){
       //:TODO:GOVIN:2020-02-20:Add the error message in a log file
     }
 
+    if(data == HEARTBEAT_MESSAGE){
+      heartbeat(ws);
+      return;
+    }
+
     switch (data.type) {
 
       case "offer":
         trackExecution("Offer : ");
-        //console.log(data);
+
         //:GLITCH:GOVIN:2020-02-20:Better user management required
         recipients = [];
         recipients.push(data.from.split("@")[1])
@@ -252,7 +246,7 @@ function createConnectionToSignalingServer(address, port, username){
       case "answer":
         trackExecution("Answer : ");
         //console.log(data);
-        //:GLITCH:GOVIN:2020-02-20:Awful to change
+
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
         remoteusername = data.from.split("@")[0]
@@ -269,8 +263,6 @@ function createConnectionToSignalingServer(address, port, username){
 
       case "login":
         trackExecution("Login : ");
-      //  console.log(data);
-        //:GLITCH:GOVIN:2020-02-20:To change
         if(data.success){
           trackExecution("Login: Success when login. ");
           changePage("call");
@@ -278,7 +270,7 @@ function createConnectionToSignalingServer(address, port, username){
           document.getElementById("info").style.display = "block";
         }else{
           connSignalingServer.close();
-          connSignalingServer == null;
+          connSignalingServer = null;
           error("Login", "Error while trying to login");
         }
 
@@ -304,6 +296,9 @@ function createConnectionToSignalingServer(address, port, username){
   };
 
   ws.onclose = function () {
+
+    clearTimeout(ws.heartbeatTimeout);
+    clearInterval(ws.hertbeatInterval);
     trackExecution("Connection closed...");
   };
 
