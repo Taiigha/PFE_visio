@@ -531,7 +531,15 @@ function createConnectionToSignalingServer(address, port, username) {
       case "leave":
         trackExecution("Leave : ");
         trackExecution(data);
-        hangUp(data.comment);
+
+        var remoteIpAddress = data.from.split("@")[1];
+
+        if(remoteIpAddress === recipients[0]){
+          hangUp(data.comment);
+        }
+        else {
+
+        }
         break;
 
       case "refuse":
