@@ -22,15 +22,13 @@ var dataChannel1 = null;
 var dataChannel2 = null;
 
 var connSignalingServer = null;
-//:GLITCH:GOVIN:2020-02-20:Awfull usernames management to change
+
 var recipients = [];
 
 var username;
 var remoteUsername;
 
 var currentAnswer = null, currentOffer = null;
-//:GLITCH:GOVIN:2020-02-20:To avoid putting manually all the information for the tests.
-//:GLITCH:GOVIN:2020-02-20:Using JQuery to procceed because the dom is not loaded to link with the button
 
 var isAVideoCall = false;
 
@@ -38,6 +36,11 @@ var isNegotiating = false;
 
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+
+
+const HEARTBEAT_MESSAGE = "--heartbeat--";
+const HEARTBEAT_TIMEOUT = 30000;
+const HEARTBEAT_INTERVAL_TIME = 10000;
 
 document.onload = function() {
   trackExecution("Document totally loaded");
@@ -47,7 +50,6 @@ function getTimestamp() {
   var date = new Date(Date.now());
   var timestamp = date.getDate()+"/"+(date.getMonth()+1)+"/"+date.getFullYear()
   + " "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
-
   return timestamp;
 }
 
@@ -345,7 +347,6 @@ function initRemoteEvent() {
       {
         console.log("Answer done");
         currentAnswer = JSON.stringify(remote.localDescription);
-        //:TODO:GOVIN:2020-03-12:Manage many users
         sendAnswer(currentAnswer, recipients[0]);
       }
     }
@@ -431,11 +432,24 @@ function receivedAnswer(answer) {
   });
 }
 
+function heartbeat(ws) {
+  clearTimeout(ws.heartbeatTimeout);
+  ws.heartbeatTimeout = setTimeout(() => {
+    window.alert("La connexion avec le serveur SIGNALING a été perdue. ")
+    ws.close();
+  }, HEARTBEAT_TIMEOUT);
+}
+
 function createConnectionToSignalingServer(address, port, username) {
   trackExecution("CALL : createConnectionToSignalingServer");
   trackExecution("Connection to "+ address +" on port "+ port +".");
 
   var ws = new WebSocket("ws://"+address+":"+port)
+
+  ws.hertbeatInterval = setInterval(() => {
+    ws.send(JSON.stringify(HEARTBEAT_MESSAGE));
+  }, HEARTBEAT_INTERVAL_TIME);
+
 
   ws.onmessage = function (evt) {
     trackExecution("[Before Processing] Message received = " + evt.data);
@@ -448,13 +462,18 @@ function createConnectionToSignalingServer(address, port, username) {
     } catch (e) {
       trackExecution("ERR : Invalid JSON");
       data = {};
-      //:TODO:GOVIN:2020-02-20:Add the error message in a log file
+    }
+
+    if(data == HEARTBEAT_MESSAGE){
+      heartbeat(ws);
+      return;
     }
 
     switch (data.type) {
       case "offer":
         trackExecution("Offer : ");
-        //:GLITCH:GOVIN:2020-02-20:Better user management required
+
+        //:COMMENT:GOVIN:2020-02-20: Multiple user management might be here
         recipients = [];
         recipients.push(data.from.split("@")[1]);
         console.log("Received offer from "+data.from);
@@ -477,7 +496,8 @@ function createConnectionToSignalingServer(address, port, username) {
 
       case "answer":
         trackExecution("Answer : ");
-        //:GLITCH:GOVIN:2020-02-20:Awful to change
+
+        //:COMMENT:GOVIN:2020-02-20:currentAnswer is a global variable which can be used to retrieve the answer
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
         remoteUsername = data.from.split("@")[0]
@@ -494,10 +514,8 @@ function createConnectionToSignalingServer(address, port, username) {
 
       case "login":
         trackExecution("Login : ");
-        //:GLITCH:GOVIN:2020-02-20:To change
-        if(data.success)
-        {
-          trackExecution("Login: Success when login.");
+        if(data.success){
+          trackExecution("Login: Success when login. ");
           changePage("call");
           document.getElementById("info").textContent = "Vous êtes connecté en tant que : " + data.to;
           document.getElementById("info").style.display = "block";
@@ -505,7 +523,7 @@ function createConnectionToSignalingServer(address, port, username) {
         else
         {
           connSignalingServer.close();
-          connSignalingServer == null;
+          connSignalingServer = null;
           error("Login", "Error while trying to login");
         }
         break;
@@ -513,7 +531,15 @@ function createConnectionToSignalingServer(address, port, username) {
       case "leave":
         trackExecution("Leave : ");
         trackExecution(data);
-        hangUp(data.comment);
+
+        var remoteIpAddress = data.from.split("@")[1];
+
+        if(remoteIpAddress === recipients[0]){
+          hangUp(data.comment);
+        }
+        else {
+
+        }
         break;
 
       case "refuse":
@@ -532,7 +558,10 @@ function createConnectionToSignalingServer(address, port, username) {
     }
   };
 
-  ws.onclose = function() {
+  ws.onclose = function () {
+
+    clearTimeout(ws.heartbeatTimeout);
+    clearInterval(ws.hertbeatInterval);
     trackExecution("Connection closed...");
   };
 
@@ -556,7 +585,6 @@ function loginSignalingServer(username) {
 function connectToSignalingServer() {
   trackExecution("CALL : connectToSignalingServer");
 
-  //:TODO:GOVIN:2020-02-20:Manage spaming the "Connect To Signaling Server Button" or disconnection then reconnection to a new server
 
   //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
   if((connSignalingServer != null) && (connSignalingServer.readyState != 3))
