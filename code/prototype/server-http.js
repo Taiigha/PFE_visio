@@ -33,7 +33,7 @@ const IPv4FamilyName = 'IPv4';
 
 const IPv4Prefix = "::ffff:";
 
-const PING_INTERVAL = 1000;
+const PING_INTERVAL = 15000;
 const MAX_PING_ID = 5;
 
 const HEARTBEAT_MESSAGE = "--heartbeat--";
@@ -64,7 +64,7 @@ function displayUsers() {
 }
 
 if(debug){
-  setInterval(displayUsers, 20*1000);
+  setInterval(displayUsers, 30*1000);
 }
 
 function writeInServerLog(message){
@@ -186,8 +186,8 @@ function login(connection, data){
       comment: "Welcome "+connection.username+" !"
     };
     sendTo(connection, message);
-    console.log(getTimestamp()+" [Login-3] User "+data.username+" is logged. ");
-    writeInServerLog("[Login-3] User "+data.username+" is logged. ");
+    console.log(getTimestamp()+" [Login-3] User "+data.username+"@"+connection.ipAddress+" is logged. ");
+    writeInServerLog("[Login-3] User "+data.username+"@"+connection.ipAddress+" is logged. ");
   }
 }
 
