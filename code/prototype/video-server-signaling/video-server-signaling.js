@@ -432,6 +432,14 @@ function receivedAnswer(answer) {
   });
 }
 
+function heartbeat(ws) {
+  clearTimeout(ws.heartbeatTimeout);
+  ws.heartbeatTimeout = setTimeout(() => {
+    window.alert("La connexion avec le serveur SIGNALING a été perdue. ")
+    ws.close();
+  }, HEARTBEAT_TIMEOUT);
+}
+
 function createConnectionToSignalingServer(address, port, username) {
   trackExecution("CALL : createConnectionToSignalingServer");
   trackExecution("Connection to "+ address +" on port "+ port +".");
