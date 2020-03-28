@@ -12,8 +12,6 @@ var opt = {optional: [
 };
 
 var jsonExec = "";
-var debug = true;
-var perf = true;
 
 var local = null;
 var remote = null;
@@ -37,7 +35,6 @@ var isNegotiating = false;
 const ipV4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 const ipV6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
 
-
 const HEARTBEAT_MESSAGE = "--heartbeat--";
 const HEARTBEAT_TIMEOUT = 30000;
 const HEARTBEAT_INTERVAL_TIME = 10000;
@@ -54,15 +51,8 @@ function getTimestamp() {
 }
 
 function trackExecution(data) {
-  if(debug)
-  {
-    if(perf)
-    {
-      //:TODO:ROUX:2020-02-25:add some information about performance
-    }
     console.log(getTimestamp() + "  " + data);
     jsonExec = jsonExec + '\n' + data;
-  }
 }
 
 function error(err, msg) {
@@ -121,7 +111,6 @@ function stopStreamedVideo(videoElem) {
 }
 
 function hangUp(comment) {
-  //:TODO:ROUX:send a debug message to server.
   trackExecution("HangUp function.");
 
   document.getElementById("endCon").style.display = "block";
@@ -150,7 +139,7 @@ function hangUp(comment) {
   stopStreamedVideo(document.getElementById("sendVideo"));
   stopStreamedVideo(document.getElementById("receiveVideo"));
 
-  //:COMMENT:GOVIN:2020-03-10:DataChannels are automatically closed with the RTCPeerConnection
+  //DataChannels are automatically closed with the RTCPeerConnection
   dataChannel1 = null;
   dataChannel2 = null;
 }
@@ -165,7 +154,6 @@ function wantToHangUp(comment) {
   recipients.forEach(function(user) {
     var message = {
       type: "leave",
-      //from: my_username,
       from: username,
       to: user,
       comment : comment
@@ -455,10 +443,9 @@ function createConnectionToSignalingServer(address, port, username) {
     trackExecution("[Before Processing] Message received = " + evt.data);
 
     var data;
-    //:COMMENT:GOVIN:2020-02-20:message shall contain {"type":"something"} and shall be in JSON format
+    //message shall contain {"type":"something"} and shall be in JSON format
     try {
       data = JSON.parse(evt.data);
-      //:TODO:GOVIN:2020-02-20:Add the message in a log file
     } catch (e) {
       trackExecution("ERR : Invalid JSON");
       data = {};
@@ -473,7 +460,7 @@ function createConnectionToSignalingServer(address, port, username) {
       case "offer":
         trackExecution("Offer : ");
 
-        //:COMMENT:GOVIN:2020-02-20: Multiple user management might be here
+        //Multiple user management might be here
         recipients = [];
         recipients.push(data.from.split("@")[1]);
         console.log("Received offer from "+data.from);
@@ -497,7 +484,7 @@ function createConnectionToSignalingServer(address, port, username) {
       case "answer":
         trackExecution("Answer : ");
 
-        //:COMMENT:GOVIN:2020-02-20:currentAnswer is a global variable which can be used to retrieve the answer
+        //currentAnswer is a global variable which can be used to retrieve the answer
         currentAnswer = data.answer;
         console.log("Received answer from "+data.from);
         remoteUsername = data.from.split("@")[0]
@@ -586,7 +573,7 @@ function connectToSignalingServer() {
   trackExecution("CALL : connectToSignalingServer");
 
 
-  //:COMMENT:GOVIN:2020-03-15:0	CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
+  //CONNECTING; 1 OPEN; 2	CLOSING	;3 CLOSED
   if((connSignalingServer != null) && (connSignalingServer.readyState != 3))
   {
     if(connSignalingServer.readyState == 1)
@@ -675,7 +662,7 @@ function createOffer(isAudioAvailable, isVideoAvailable) {
       local.addTrack(track, stream);
     }
 
-    //::GOVIN:2020-02-20:Binding stream with sendVideo element
+    //Binding stream with sendVideo element
     var video = document.getElementById("sendVideo");
     video.srcObject = stream;
 
@@ -737,7 +724,7 @@ function receivedOffer(isAudioAvailable, isVideoAvailable) {
       remote.addTrack(track, stream);
     }
 
-    //::GOVIN:2020-02-20:Binding stream with sendVideo element
+    //Binding stream with sendVideo element
     var sendVideo = document.getElementById("sendVideo");
     sendVideo.srcObject = stream;
 

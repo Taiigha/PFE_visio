@@ -1,42 +1,163 @@
 <!DOCTYPE html>
 
-<html>
-	<head>
+<html lang="en">
 
-		<meta charset="utf-8">
-		<meta name="description" content="WebRTC Visioconference">
-		<meta name="mobile-web-app-capable" content="yes">
+<head>
 
-		<title>WebRTC Visioconference</title>
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC Visioconference">
+    <meta name="mobile-web-app-capable" content="yes">
 
-		<link rel="stylesheet" href="css/main.css"/>
+    <title>WebRTC Visioconference</title>
 
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="./css/main.css" />
+
+    <script type="text/javascript" src="./js/jquery-min.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css" />
+    <!-- Load polyfills to support older browsers -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver"></script>
+
+    <!-- Required scripts -->
+    <script src="https://unpkg.com/vue@latest/dist/vue.js"></script>
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script type="text/javascript" src="./js/main.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+        <b-container>
+            <h1>WebRTC Visioconference</h1>
+            <b-alert style="display:none" id="alert" show variant="danger"></b-alert>
+            <b-alert style="display:none" id="info" show variant="info"></b-alert>
+
+            <div id="connectToSignalingServer">
+							<b-container fluid>
+						  <b-row class="my-1">
+						    <b-col sm="2">
+						      <label for="input-small">Nom d'utilisateur : </label>
+						    </b-col>
+						    <b-col sm="10">
+						      <b-form-input id="username" placeholder="Votre nom d'utilisateur"></b-form-input>
+						    </b-col>
+						  </b-row>
+
+						  <b-row class="my-1">
+						    <b-col sm="2">
+						      <label for="input-default">URL : </label>
+						    </b-col>
+						    <b-col sm="10">
+						      <b-form-input id="url" placeholder="Entrer l'IP ou l'URL" value="127.0.0.1" ></b-form-input>
+						    </b-col>
+						  </b-row>
+
+						  <b-row class="my-1">
+						    <b-col sm="2">
+						      <label for="input-large">Port : </label>
+						    </b-col>
+						    <b-col sm="10">
+						      <b-form-input id="port"  placeholder="Entrer le port" value="9090"></b-form-input>
+						    </b-col>
+						  </b-row>
+						</b-container>
+
+            <b-button block variant="outline-dark" id="connectToSignalingServerButton"  onclick="connectToSignalingServer()">Connexion au serveur signaling </b-button>
+            </div>
+
+						<div id="call">
+              <b-alert style="display: none" id="endCon" show variant="info" ></b-alert>
+              <!-- Configuration video
+	            <div id="configuration">
+								<b-container fluid>
+								<b-row class="my-1">
+									<b-col sm="2">
+										<label for="input-small">Largeur : </label>
+									</b-col>
+									<b-col sm="10">
+										<b-form-input name="width" id="width" placeholder="Largeur" value="1920"></b-form-input>
+									</b-col>
+								</b-row>
+
+								<b-row class="my-1">
+									<b-col sm="2">
+										<label for="input-default">Hauteur : </label>
+									</b-col>
+									<b-col sm="10">
+										<b-form-input name="height" id="height" placeholder="Hauteur" value="1080" ></b-form-input>
+									</b-col>
+								</b-row>
+
+								<b-row class="my-1">
+									<b-col sm="2">
+										<label for="input-large">Images par seconde max : </label>
+									</b-col>
+									<b-col sm="10">
+										<b-form-input id="maxFramRate" placeholder="Images par seconde maximum" value="60"></b-form-input>
+									</b-col>
+								</b-row>
+
+								<b-row class="my-1">
+									<b-col sm="2">
+										<label for="input-large">Images par seconde min : </label>
+									</b-col>
+									<b-col sm="10">
+										<b-form-input name="minFrameRate" id="minframeRate" placeholder="Images par seconde minimum" value="20" ></b-form-input>
+									</b-col>
+								</b-row>
 
 
-	</head>
+	            </div>
+              -->
 
-	<body>
-		<h1>WebRTC Visioconference</h1>
+              <b-container fluid>
+              <b-row class="my-1">
+                <b-col sm="2">
+                  <label for="input-large">ip de la cible : </label>
+                </b-col>
+                <b-col sm="10">
+                  <b-form-input name="recipient" id="recipient" placeholder="192.168.0.0"></b-form-input>
+                </b-col>
+              </b-row>
+            </b-container>
+	            </br>
+							<div id="buttons" >
+									<b-button variant="success" id="audioCallButton" onclick="call(false)">Appel audio</b-button>
+									<b-button variant="success" id="videoCallbutton" onclick="call(true)">Appel vidéo</b-button>
 
-		<div id="buttons">
-			<button id="callButton">Appeler</button>
-			<button id="sendButton">Raccrocher</button>
-		</div>
+							</div>
+							</br>
+						</div>
 
-		<div id="send">
-			<h2>Send </h2>
-			<video>
-			</video>
-		</div>
+						<div id="inCommunication" >
+						<b-button variant="danger" id="hangUpButton" onclick='wantToHangUp("Votre correspondant a raccroché.")'>Raccrocher</b-button>
+            <div class="text-info" id="chatbox" style="height:350px; overflow:auto; border: 2px solid #dedede;">
+            </div>
+            <input type="text" id="textToSend">
+            <b-button variant="primary" type="submit" id="sendText" class="btn" onclick="sendMessage()">Envoyer</b-button>
+            <div id="receive">
+                <h2>Receive</h2>
+                <video id="receiveVideo">
+                </video>
+            </div>
+            <div id="send">
+                <h2>Send </h2>
+                <video id="sendVideo" muted>
+                </video>
+            </div>
+					</div>
+        </b-container>
+    </div>
 
-		<div id="receive">
-			<h2>Receive</h2>
-			<video>
-			</video>
-		</div>
+    <!-- Start running your app -->
+    <script>
+        window.app = new Vue({
+            el: '#app',
+        })
+    </script>
+    <script type="text/javascript" src="./js/adapter.js"></script>
 
-	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+</body>
 
-	</body>
 </html>
