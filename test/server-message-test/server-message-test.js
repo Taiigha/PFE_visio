@@ -76,10 +76,6 @@ function init(){
               break;
           }
         break;
-
-        default:
-        //  defaultTest(data);
-        break;
     }
   }
 }
