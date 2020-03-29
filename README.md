@@ -1,4 +1,4 @@
-# PFE_visio# PFE_visio
+# PFE_visio
 PFE_visio is an end of studie's project which permit to do videoconference using WebRTC.
 
 ## Instructions
