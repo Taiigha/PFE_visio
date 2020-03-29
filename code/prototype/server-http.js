@@ -244,7 +244,7 @@ function sendOffer(connection, data){
       type: "offer",
       offer: data.offer,
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       videoCall : data.videoCall
     }
     sendTo(conn, message);
@@ -272,7 +272,7 @@ function answer(connection, data){
     var message = {
       type: "answer",
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       answer: data.answer
     }
     sendTo(conn, message);
@@ -310,7 +310,7 @@ function leave(connection, data){
         var message = {
           type: "leave",
           from: connection.username+"@"+connection.ipAddress,
-          to: data.to+"@"+conn.ipAddress
+          to: conn.username+"@"+conn.ipAddress
         };
         sendTo(conn, message);
         console.log(getTimestamp()+" [Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
@@ -341,17 +341,17 @@ function sendCandidateTo(connection, data){
     var message = {
       type: "candidate",
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       candidate: data.candidate
     };
     sendTo(conn, message);
-    console.log(getTimestamp()+" [Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to+"@"+conn.ipAddress);
-    writeInServerLog("[Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+data.to+"@"+conn.ipAddress);
+    console.log(getTimestamp()+" [Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+conn.username+"@"+conn.ipAddress);
+    writeInServerLog("[Candidate-2] "+connection.username+"@"+connection.ipAddress+" is sending candidate to : "+conn.username+"@"+conn.ipAddress);
 
   }else{
 
-      console.log("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+data.to+"@"+conn.ipAddress+"]");
-      writeInServerLog("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+data.to+"@"+conn.ipAddress+"]");
+      console.log("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+conn.username+"@"+conn.ipAddress+"]");
+      writeInServerLog("[Candidate-3] Error : ["+connection.username+"@"+connection.ipAddress+ " is sending candidate to : "+conn.username+"@"+conn.ipAddress+"]");
   }
 }
 
@@ -382,7 +382,7 @@ function refuse(connection, data){
     var message = {
       type: "refuse",
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       answer: data.answer
     }
     console.log("[Refuse-2] " + message + " conn : "+ conn)
@@ -495,7 +495,7 @@ wss.on('connection', function(connection) {
             var message = {
                           type: "leave",
                           from: connection.username+"@"+ipAddress,
-                          to: data.to+"@"+conn.ipAddress
+                          to: conn.username+"@"+conn.ipAddress
                         };
             sendTo(conn, message);
             console.log(getTimestamp()+" [Close-Connection-Event-3] Leaving message send to "+conn.username+"@"+conn.ipAddress);
