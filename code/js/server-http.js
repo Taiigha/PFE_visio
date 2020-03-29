@@ -287,7 +287,7 @@ function sendOffer(connection, data) {
       type: "offer",
       offer: data.offer,
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       videoCall : data.videoCall
     }
 
@@ -297,7 +297,7 @@ function sendOffer(connection, data) {
   {
     console.log(getTimestamp() + " [Offer-2] From " + connection.username + "@" + connection.ipAddress + " to " + data.to + " is not connected to the server.");
     writeInServerLog("[Offer-2] " + data.to + " is not connected to the server.");
-    sendErrorMessage(connection, "offer", "Error: " + data.to + "is not connected to the server.");
+    sendErrorMessage(connection, "offer", "Error: " + data.to + " is not connected to the server.");
   }
 }
 
@@ -318,7 +318,7 @@ function answer(connection, data) {
     var message = {
       type: "answer",
       from: connection.username+"@"+connection.ipAddress,
-      to: data.to+"@"+conn.ipAddress,
+      to: conn.username+"@"+conn.ipAddress,
       answer: data.answer
     }
 
@@ -328,7 +328,7 @@ function answer(connection, data) {
   {
     console.log(getTimestamp() + " [Answer-2] From " + connection.username + "@" + connection.ipAddress + " to " + data.to + " is not connected to the server.");
     writeInServerLog("[Answer-2] From " + connection.username + "@" + connection.ipAddress + " to " + data.to + " is not connected to the server.");
-    sendErrorMessage(connection, "answer", "Error: " + data.to + "is not connected to the server.");
+    sendErrorMessage(connection, "answer", "Error: " + data.to + " is not connected to the server.");
   }
 }
 
@@ -568,7 +568,7 @@ wss.on("connection", function(connection) {
             var message = {
                           type: "leave",
                           from: connection.username+"@"+ipAddress,
-                          to: data.to+"@"+conn.ipAddress
+                          to: conn.username+"@"+conn.ipAddress
                         };
             sendTo(conn, message);
             console.log(getTimestamp() + " [Close-Connection-Event-3] Leaving message send to " + conn.username + "@" + conn.ipAddress);
