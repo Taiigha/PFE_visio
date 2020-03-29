@@ -1,0 +1,10 @@
+div#displayDiv, div.flex{
+  display:flex;
+  flex-direction: column;
+  width:100%;
+}
+
+div.title{
+  padding: 5px;
+  font-weight: bold;
+}
