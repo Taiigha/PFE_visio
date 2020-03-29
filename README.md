@@ -39,6 +39,7 @@ In order to launch the tests you need to have a working SIGNALING server. This s
 
 Then click on "Begin Test".
 
+## Tree
 .
 ├── code
 │   ├── css
