@@ -1,7 +1,7 @@
 const IP_ADDRESS = "127.0.0.1";
 const PORT = 9090;
 
-var ws = new WebSocket("ws://"+IP_ADDRESS+":"+PORT);
+var ws = null;
 
 const USERNAME = "Me";
 const RECIPIENT = "127.0.0.1"
@@ -18,65 +18,72 @@ const ERROR_NULL_ANSWER_MESSAGE = "Error: The answer you sent is null. ";
 var beginButton = document.getElementById("beginTestButton");
 beginButton.onclick = beginTest;
 
-ws.onmessage = function(evt){
-  var data;
+init();
 
-  try {
-    data = JSON.parse(evt.data);
-  } catch (e) {
-    trackExecution("ERR : Invalid JSON");
-    data = {};
-    return;
-  }
 
-  switch(data.type){
-      case "login":
-        loginTestAnswer(data);
-      break;
+function init(){
+  ws = new WebSocket("ws://"+IP_ADDRESS+":"+PORT);
+  ws.onmessage = function(evt){
+    var data;
 
-      case "offer":
-        if(leaveTestNumber == 0){
-          leaveTestNumber++;
-          leaveTest();
-        }else{
-          offerTestAnswer(data);
-        }
-      break;
+    try {
+      data = JSON.parse(evt.data);
+    } catch (e) {
+      trackExecution("ERR : Invalid JSON");
+      data = {};
+      return;
+    }
 
-      case "answer":
-        answerTestAnswer(data);
-      break;
+    switch(data.type){
+        case "login":
+          loginTestAnswer(data);
+        break;
 
-      case "leave":
-        leaveTestAnswer(data);
-      break;
-
-      case "refuse":
-        refuseTestAnswer(data);
-      break;
-
-      case "error":
-        switch(data.errorType){
-
-          case OFFER_ID:
+        case "offer":
+          if(leaveTestNumber == 0){
+            leaveTestNumber++;
+            leaveTest();
+          }else{
             offerTestAnswer(data);
-          break;
+          }
+        break;
 
-          case ANSWER_ID:
-            answerTestAnswer(data);
-          break;
+        case "answer":
+          answerTestAnswer(data);
+        break;
 
-          default:
-            defaultTestAnswer(data);
+        case "leave":
+          leaveTestAnswer(data);
+        break;
+
+        case "refuse":
+          refuseTestAnswer(data);
+        break;
+
+        case "error":
+          switch(data.errorType){
+
+            case OFFER_ID:
+              offerTestAnswer(data);
             break;
-        }
-      break;
 
-      default:
-      //  defaultTest(data);
-      break;
+            case ANSWER_ID:
+              answerTestAnswer(data);
+            break;
+
+            default:
+              defaultTestAnswer(data);
+              break;
+          }
+        break;
+
+        default:
+        //  defaultTest(data);
+        break;
+    }
   }
 }
+
 
 function beginTest(){
   loginTest();
@@ -145,7 +152,7 @@ function refuseTest(){
 
  const ANSWER_ID = "answer";
  const FAKE_ANSWER = "fake_answer";
- const NUMBER_OF_FAKE_ANSWER_SEND = 1;
+ const NUMBER_OF_FAKE_ANSWER_SEND = 100;
 
  var ANSWER_TEST_8_DIV = null;
 
@@ -196,11 +203,11 @@ function refuseTest(){
      case 10:
        numberOfGoodReceivedOffer += (data.to === SELF && data.from === SELF && data.offer === FAKE_OFFER?1:0);
        numberOfReceivedOffer++;
-       if(numberOfGoodReceivedOffer == NUMBER_OF_FAKE_OFFER_SEND){
-         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_OFFER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
+       if(numberOfGoodReceivedOffer == NUMBER_OF_FAKE_ANSWER_SEND){
+         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
        }
-       else if(numberOfReceivedOffer == NUMBER_OF_FAKE_OFFER_SEND){
-         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_OFFER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
+       else if(numberOfReceivedOffer == NUMBER_OF_FAKE_ANSWER_SEND){
+         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
          answerTestNumber++;
        }
        writeResult(ANSWER_ID, "End test Answer. ");
@@ -247,7 +254,7 @@ var numberOfGoodReceivedOffer = 0;
 const OFFER_ID = "offer";
 const IS_VIDEO_CALL = true;
 const FAKE_OFFER = "fake_offer";
-const NUMBER_OF_FAKE_OFFER_SEND = 1;
+const NUMBER_OF_FAKE_OFFER_SEND = 100;
 
 
 var OFFER_TEST_8_DIV = null;
