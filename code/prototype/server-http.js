@@ -356,7 +356,8 @@ function leave(connection, data){
         var message = {
           type: "leave",
           from: connection.username+"@"+connection.ipAddress,
-          to: conn.username+"@"+conn.ipAddress
+          to: conn.username+"@"+conn.ipAddress,
+          comment: data.comment
         };
         sendTo(conn, message);
         console.log(getTimestamp()+" [Leave-2] "+connection.username+"@"+connection.ipAddress+" sending leaving message to "+data.to);
