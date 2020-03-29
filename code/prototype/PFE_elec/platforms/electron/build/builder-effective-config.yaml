@@ -1,0 +1,15 @@
+directories:
+  output: /home/taigha/FAC/cordova/PFE_elec/platforms/electron/build
+  buildResources: /home/taigha/FAC/cordova/PFE_elec/platforms/electron/build-res
+  app: /home/taigha/FAC/cordova/PFE_elec/platforms/electron/www
+appId: com.example.PFE_elec
+productName: PFE_elec
+electronVersion: 4.0.1
+electronDownload:
+  version: 4.0.1
+linux:
+  icon: installer.png
+  target:
+    - target: tar.gz
+      arch:
+        - x64

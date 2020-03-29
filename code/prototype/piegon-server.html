@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="description" content="page test">
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <!--//:COMMENT:GOVIN:2020-02-20:TO delete if not really used-->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script type="text/javascript" src="./pigeon-server.js"></script>
+</head>
+<body>
+  <div>
+    <label for="username">Username: </label>
+    <input type="text" name="url" id="username" required="">
+
+    <label for="url">URL: </label>
+    <input type="text" name="url" id="url" required="">
+
+    <label for="port">Port: </label>
+    <input type="text" name="port" id="port" required="">
+
+
+    <button id="connectToSignalingServerButton">Connect to Signaling Server</button>
+  </div>
+  <p> This is a test. </p>
+  <label for="offer">Offre :</label>
+  <textarea type="text" id="offer" cols="50" rows="20"></textarea>
+  <button onclick="testDevices(createOffer)"> Créer une offre </button>
+  <button onclick="testDevices(receivedOffer)"> Traiter l'offre </button>
+  <label for="answer">Réponse :</label>
+  <textarea type="text" id="answer" cols="50" rows="20"></textarea>
+  <button onclick="receivedAnswer()"> Traiter la réponse </button>
+  <div class="text-info" id="chatbox" style="height:350px; overflow:auto; border: 2px solid #dedede;">
+    <p> This is a chat box. </p>
+  </div>
+  <input type="text" id="textToSend">
+  <button type="submit" id="sendText" class="btn" onclick="sendMessage()">Envoyer</button>
+  <audio id="audio"> </audio>
+</body>
+</html>

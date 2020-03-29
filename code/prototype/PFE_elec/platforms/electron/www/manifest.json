@@ -1,0 +1,12 @@
+{
+  "background_color": "#FFF",
+  "display": "standalone",
+  "orientation": "any",
+  "start_url": "index.html",
+  "name": "PFE_elec",
+  "short_name": "PFE_elec",
+  "version": "com.example.PFE_elec",
+  "description": "A sample Apache Cordova application that responds to the deviceready event.",
+  "author": "Apache Cordova Team",
+  "icons": []
+}
