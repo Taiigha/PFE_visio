@@ -443,8 +443,7 @@ function refuse(connection, data) {
     var message = {
       type: "refuse",
       from: connection.username + "@" + connection.ipAddress,
-      to: data.to + "@" +conn.ipAddress,
-      answer: data.answer
+      to: data.to + "@" +conn.ipAddress
     }
 
     console.log("[Refuse-2] " + message + " conn : "+ conn);

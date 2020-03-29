@@ -69,7 +69,7 @@ if(debug){
 
 function writeInServerLog(message){
   var timestampedMessage = (getTimestampedMessage(message) + "\n");
-  if(server_log_stream.readyState == 0){
+  if(server_log_stream == null || server_log_stream.readyState == 0){
     log_queue += timestampedMessage;
     return;
   }
@@ -77,6 +77,10 @@ function writeInServerLog(message){
 }
 
 function writeInStream(stream, message){
+  if(stream == null){
+    console.log("writeInStream: stream is null. ");
+    return;
+  }
   stream.write(message);
 }
 
@@ -86,6 +90,10 @@ function getTimestampedMessage(message){
 
 
 function saveTrace(connection, data){
+  if(connection == null){
+    console.log("saveTrace: connection is null. ");
+    return;
+  }
   console.log("Save trace "+connection.username);
   var donnees = data.logs;
   fs.writeFileSync(connection.username+'-logs', donnees);
@@ -137,6 +145,14 @@ function getUser(username){
 
 
 function login(connection, data){
+  if(connection == null){
+    console.log("login: connection is null. ");
+    return;
+  }
+  if(data == null){
+    console.log("login: data is null. ");
+    return;
+  }
 
   var address = {
     address: connection._socket.remoteAddress,
@@ -192,6 +208,10 @@ function login(connection, data){
 }
 
 function heartbeat(connection){
+  if(connection == null){
+    console.log("heartbeat: connection is null. ")
+    return;
+  }
   sendTo(connection, HEARTBEAT_MESSAGE);
 }
 
@@ -213,6 +233,10 @@ function findConnection(recipient){
 }
 
 function sendErrorMessage(connection, errorType, errorMessage){
+  if(connection == null || errorType == null || errorMessage == null){
+    console.log("sendErrorMessage: connection, errorType or ErrorMessage is null. ")
+    return;
+  }
   var message = {
     type: "error",
     errorType: errorType,
@@ -223,12 +247,20 @@ function sendErrorMessage(connection, errorType, errorMessage){
 
 function sendOffer(connection, data){
 
+  if(data.offer === null){
+    console.log(getTimestamp()+" [Offer-4] From "+connection.username+"@"+connection.ipAddress+" the offer sent is null. ");
+    writeInServerLog("[Offer-4] From "+connection.username+"@"+connection.ipAddress+" the offer sent is null. ");
+    sendErrorMessage(connection, "offer", "Error: The offer you sent is null. ");
+    return;
+  }
+
   if(data.to == null){
-    console.log(getTimestamp()+" [Offer-0] Error: "+connection.username+"@"+connection.ipAddress+"trying to send offer to unknown. ");
-    writeInServerLog("[Offer-0] Error: "+connection.username+"@"+connection.ipAddress+"trying to send offer to unknown. ");
+    console.log(getTimestamp()+" [Offer-0] Error: "+connection.username+"@"+connection.ipAddress+" trying to send offer to unknown. ");
+    writeInServerLog("[Offer-0] Error: "+connection.username+"@"+connection.ipAddress+" trying to send offer to unknown. ");
     sendErrorMessage(connection, "offer", "Null recipient. ");
     return;
   }
+
   console.log(getTimestamp()+" [Offer-1] Sending offer from "+connection.username+" to: "+data.to);
   writeInServerLog("[Offer-1] Sending offer from "+connection.username+" to: "+data.to);
   var conn = users[data.to];
@@ -258,6 +290,20 @@ function sendOffer(connection, data){
 function answer(connection, data){
   console.log(getTimestamp()+" [Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
   writeInServerLog("[Answer-1] Sending answer from "+connection.username+" to: "+ data.to);
+
+  if(data.answer === null){
+    console.log(getTimestamp()+" [Answer-4] From "+connection.username+"@"+connection.ipAddress+" the answer sent is null. ");
+    writeInServerLog("[Answer-4] From "+connection.username+"@"+connection.ipAddress+" the answer sent is null. ");
+    sendErrorMessage(connection, "answer", "Error: The answer you sent is null. ");
+    return;
+  }
+
+  if(data.to == null){
+    console.log(getTimestamp()+" [Answer-0] Error: "+connection.username+"@"+connection.ipAddress+" trying to send offer to unknown. ");
+    writeInServerLog("[Answer-0] Error: "+connection.username+"@"+connection.ipAddress+" trying to send answer to unknown. ");
+    sendErrorMessage(connection, "answer", "Null recipient. ");
+    return;
+  }
 
   //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
@@ -368,7 +414,6 @@ function refuse(connection, data){
   console.log(getTimestamp()+" [Refuse-1] Sending refuse from "+connection.username+"@"+connection.ipAddress+" to: "+ data.to);
   writeInServerLog("[Refuse-1] Sending refuse from "+connection.username+"@"+connection.ipAddress+" to: "+ data.to);
 
-  //:COMMENT:GOVIN:2020-02-20:Connection answer to the other user in data
   var conn = users[data.to];
 
   if(conn != null) {
@@ -382,8 +427,7 @@ function refuse(connection, data){
     var message = {
       type: "refuse",
       from: connection.username+"@"+connection.ipAddress,
-      to: conn.username+"@"+conn.ipAddress,
-      answer: data.answer
+      to: conn.username+"@"+conn.ipAddress
     }
     console.log("[Refuse-2] " + message + " conn : "+ conn)
     writeInServerLog("[Refuse-2] " + message + " conn : "+ conn);
