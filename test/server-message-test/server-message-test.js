@@ -76,10 +76,6 @@ function init(){
               break;
           }
         break;
-
-        default:
-        //  defaultTest(data);
-        break;
     }
   }
 }
@@ -201,16 +197,17 @@ function refuseTest(){
      break;
 
      case 10:
-       numberOfGoodReceivedOffer += (data.to === SELF && data.from === SELF && data.offer === FAKE_OFFER?1:0);
-       numberOfReceivedOffer++;
-       if(numberOfGoodReceivedOffer == NUMBER_OF_FAKE_ANSWER_SEND){
-         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
+       numberOfGoodReceivedAnswer += (data.to === SELF && data.from === SELF && data.answer === FAKE_ANSWER?1:0);
+       numberOfReceivedAnswer++;
+       if(numberOfGoodReceivedAnswer == NUMBER_OF_FAKE_ANSWER_SEND){
+         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" answer)", (numberOfGoodReceivedAnswer === NUMBER_OF_FAKE_OFFER_SEND));
+       writeResult(ANSWER_ID, "End test Answer. ");
        }
-       else if(numberOfReceivedOffer == NUMBER_OF_FAKE_ANSWER_SEND){
-         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" offer)", (numberOfReceivedOffer === NUMBER_OF_FAKE_OFFER_SEND));
+       else if(numberOfReceivedAnswer == NUMBER_OF_FAKE_ANSWER_SEND){
+         writeResult(ANSWER_ID, "Test " + answerTestNumber + " : (receive "+NUMBER_OF_FAKE_ANSWER_SEND+" answer)", (numberOfGoodReceivedAnswer === NUMBER_OF_FAKE_ANSWER_SEND));
+       writeResult(ANSWER_ID, "End test Answer. ");
          answerTestNumber++;
        }
-       writeResult(ANSWER_ID, "End test Answer. ");
      break;
    }
 
